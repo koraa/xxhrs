@@ -7,8 +7,8 @@ license = "BSD-3-Clause"
 description = ""
 readme = "readme.md"
 repository = "https://github.com/koraa/huniq"
-categories = [""]
-keywords = []
+categories = ["algorithms"]
+keywords = ["hash", "xxhash", "bindings", "xxh3", "xxhash"]
 
 [dependencies]
 getrandom = "^0.1.14"
