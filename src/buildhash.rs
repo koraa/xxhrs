@@ -1,7 +1,10 @@
 use std::{hash::BuildHasher, default::Default};
 use getrandom::getrandom;
-use crate::xxhash::{XXH32, XXH64};
-use crate::xxh3::{XXH3_64, XXH3_128};
+use crate::{
+    xxhash::{XXH32, XXH64},
+    xxh3::{XXH3_64, XXH3_128},
+    entropy::EntropyPool,
+};
 
 pub struct RandomStateXXH32 {
     seed: u32
@@ -48,7 +51,7 @@ impl BuildHasher for RandomStateXXH64 {
 }
 
 pub struct RandomStateXXH3_64 {
-    secret: [u8; 32]
+    pool: EntropyPool
 }
 
 impl Default for RandomStateXXH3_64 {
@@ -57,22 +60,20 @@ impl Default for RandomStateXXH3_64 {
 
 impl RandomStateXXH3_64 {
     pub fn new() -> Self {
-        let mut secret = [0u8; 32];
-        getrandom(&mut secret).unwrap();
-        Self { secret }
+        Self { pool: EntropyPool::randomize() }
     }
 }
 
 impl BuildHasher for RandomStateXXH3_64 {
-    type Hasher = XXH3_64;
+    type Hasher = XXH3_64<'static>;
 
     fn build_hasher(&self) -> Self::Hasher {
-        Self::Hasher::with_secret(&self.secret)
+        Self::Hasher::with_entropy(&self.pool)
     }
 }
 
 pub struct RandomStateXXH3_128 {
-    secret: [u8; 32]
+    pool: EntropyPool
 }
 
 impl Default for RandomStateXXH3_128 {
@@ -81,12 +82,10 @@ impl Default for RandomStateXXH3_128 {
 
 impl RandomStateXXH3_128 {
     pub fn new() -> Self {
-        let mut secret = [0u8; 32];
-        getrandom(&mut secret).unwrap();
-        Self { secret }
+        Self { pool: EntropyPool::randomize() }
     }
 
-    pub fn build_hasher(&self) -> XXH3_128 {
-        XXH3_128::with_secret(&self.secret)
+    pub fn build_hasher(&self) -> XXH3_128<'static> {
+        XXH3_128::with_entropy(&self.pool)
     }
 }

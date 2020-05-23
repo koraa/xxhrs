@@ -12,9 +12,13 @@ keywords = []
 
 [dependencies]
 getrandom = "^0.1.14"
+tiny-keccak = { version = "^2.0.2", features = ["shake"] }
 
 [build-dependencies]
 bindgen = "^0.52.0"
 cc = { version = "^1.0.48", features = ["parallel"] }
 anyhow = "^1.0.26"
 shell-words = "^0.1.0"
+
+[dev-dependencies]
+doc-comment = "0.3.3"

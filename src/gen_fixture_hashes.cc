@@ -49,9 +49,11 @@ int main(int argc, const char **argv) {
   uint32_t seed32 = 0xf7649871;
   uint64_t seed64 = 0x06cd630df7649871;
 
-  const std::vector<uint8_t> data = read_file("fixtures/data"), secret = read_file("fixtures/secret");
-  const uint8_t *d = std::data(data), *kd = std::data(secret);
-  size_t s = std::size(data), ks = std::size(secret);
+  const std::vector<uint8_t>
+    data = read_file("fixtures/data"),
+    entropy = read_file("fixtures/secret_entropy");
+  const uint8_t *d = std::data(data), *kd = std::data(entropy);
+  size_t s = std::size(data), ks = std::size(entropy);
 
   pt("SEED32", seed32);
   pt("SEED64", seed64);

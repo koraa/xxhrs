@@ -32,9 +32,9 @@ impl XXH32 {
 
     pub fn with_seed(seed: u32) -> XXH32 {
         unsafe {
-            let mut r = MaybeUninit::<&C::XXH32_state_t>::uninit();
+            let mut r = MaybeUninit::<C::XXH32_state_t>::uninit();
             C::XXH32_reset(r.as_mut_ptr() as *mut C::XXH32_state_t, seed);
-            XXH32 { state: *r.assume_init() }
+            XXH32 { state: r.assume_init() }
         }
     }
 
@@ -76,9 +76,9 @@ impl XXH64 {
 
     pub fn with_seed(seed: u64) -> XXH64 {
         unsafe {
-            let mut r = MaybeUninit::<&C::XXH64_state_t>::uninit();
+            let mut r = MaybeUninit::<C::XXH64_state_t>::uninit();
             C::XXH64_reset(r.as_mut_ptr() as *mut C::XXH64_state_t, seed);
-            XXH64 { state: *r.assume_init() }
+            XXH64 { state: r.assume_init() }
         }
     }
 }

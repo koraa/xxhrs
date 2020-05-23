@@ -7,24 +7,24 @@ use std::path::PathBuf;
 fn try_main() -> Result<()> {
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let project_dir = {
-        let mut r = PathBuf::from(file!());
+        let mut r = PathBuf::from(file!()).canonicalize()?;
         r.pop();
         r
     };
 
     // Configure C build
     env::set_var(
-        "CPPFLAGS",
+        "CFLAGS",
         format!(
-            "-I{dir}/vendor/xxhash/ -DXXH_STATIC_LINKING_ONLY=1 {old}",
+            "-I{dir}/vendor/xxhash/ {old}",
             dir = project_dir.display(),
-            old = env::var("CPPFLAGS").unwrap_or("".to_string())
+            old = env::var("CFLAGS").unwrap_or("".to_string())
         ),
     );
 
     // Compile xxhash
     cc::Build::new()
-        .file("vendor/xxhash/xxhash.c")
+        .file("src/xxhash_bindings.c")
         .compile("xxhash");
 
     // Generate rust bindings
