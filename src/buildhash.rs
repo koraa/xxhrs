@@ -56,10 +56,12 @@ pub struct RandomStateXXH3_64 {
 }
 
 impl Default for RandomStateXXH3_64 {
+    #[inline]
     fn default() -> Self { Self::new() }
 }
 
 impl RandomStateXXH3_64 {
+    #[inline]
     pub fn new() -> Self {
         Self { pool: EntropyPool::randomize() }
     }
@@ -68,6 +70,7 @@ impl RandomStateXXH3_64 {
 impl BuildHasher for RandomStateXXH3_64 {
     type Hasher = XXH3_64<'static>;
 
+    #[inline]
     fn build_hasher(&self) -> Self::Hasher {
         Self::Hasher::with_entropy(&self.pool)
     }
