@@ -50,6 +50,7 @@ impl BuildHasher for RandomStateXXH64 {
     }
 }
 
+#[derive(Clone)]
 pub struct RandomStateXXH3_64 {
     pool: EntropyPool
 }
