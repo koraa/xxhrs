@@ -88,14 +88,12 @@ impl XXH3_64<'_> {
 }
 
 impl Hasher for XXH3_64<'_> {
-    #[inline]
     fn write(&mut self, bytes: &[u8]) {
         unsafe {
             C::XXH3_64bits_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len() as u64);
         }
     }
 
-    #[inline]
     fn finish(&self) -> u64 {
         unsafe { C::XXH3_64bits_digest(&self.state) }
     }
