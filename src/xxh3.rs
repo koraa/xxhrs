@@ -21,19 +21,16 @@ pub struct XXH3_64<'a> {
 }
 
 impl Default for XXH3_64<'_> {
-    #[inline]
     fn default() -> Self { Self::new() }
 }
 
 impl XXH3_64<'_> {
-    #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
         unsafe {
             C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len() as u64)
         }
     }
 
-    #[inline]
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u64 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         C::XXH3_64bits_withSecret(
@@ -41,21 +38,18 @@ impl XXH3_64<'_> {
             entropy.as_ptr() as *const c_void, entropy.len() as u64)
     }
 
-    #[inline]
     pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u64 {
         unsafe {
             Self::hash_with_entropy_buffer(&entropy.entropy, bytes)
         }
     }
 
-    #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe {
             C::XXH3_64bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
         }
     }
 
-    #[inline]
     pub fn new() -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -67,7 +61,6 @@ impl XXH3_64<'_> {
         }
     }
 
-    #[inline]
     pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -80,7 +73,6 @@ impl XXH3_64<'_> {
         }
     }
 
-    #[inline]
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
