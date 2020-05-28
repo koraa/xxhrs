@@ -22,7 +22,7 @@ impl XXH32 {
 
     pub fn hash_with_seed(seed: u32, bytes: &[u8]) -> u32 {
         unsafe {
-            C::XXH32(bytes.as_ptr() as *const c_void, bytes.len(), seed)
+            C::XXH32(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
         }
     }
 
@@ -40,7 +40,7 @@ impl XXH32 {
 
     pub fn write(&mut self, bytes: &[u8]) {
         unsafe {
-            C::XXH32_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len());
+            C::XXH32_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len() as u64);
         }
     }
 
@@ -66,7 +66,7 @@ impl XXH64 {
 
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe {
-            C::XXH64(bytes.as_ptr() as *const c_void, bytes.len(), seed)
+            C::XXH64(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
         }
     }
 
@@ -86,7 +86,7 @@ impl XXH64 {
 impl Hasher for XXH64 {
     fn write(&mut self, bytes: &[u8]) {
         unsafe {
-            C::XXH64_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len());
+            C::XXH64_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len() as u64);
         }
     }
 

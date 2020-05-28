@@ -29,7 +29,7 @@ impl XXH3_64<'_> {
     #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
         unsafe {
-            C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len())
+            C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len() as u64)
         }
     }
 
@@ -37,8 +37,8 @@ impl XXH3_64<'_> {
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u64 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         C::XXH3_64bits_withSecret(
-            bytes.as_ptr() as *const c_void, bytes.len(),
-            entropy.as_ptr() as *const c_void, entropy.len())
+            bytes.as_ptr() as *const c_void, bytes.len() as u64,
+            entropy.as_ptr() as *const c_void, entropy.len() as u64)
     }
 
     #[inline]
@@ -51,7 +51,7 @@ impl XXH3_64<'_> {
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe {
-            C::XXH3_64bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len(), seed)
+            C::XXH3_64bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
         }
     }
 
@@ -73,7 +73,7 @@ impl XXH3_64<'_> {
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_64bits_reset_withSecret(
             r.as_mut_ptr() as *mut C::XXH3_state_t,
-            entropy.as_ptr() as *const c_void, entropy.len());
+            entropy.as_ptr() as *const c_void, entropy.len() as u64);
         XXH3_64 {
             state: r.assume_init(),
             entropy_lifetime: PhantomData,
@@ -99,7 +99,7 @@ impl Hasher for XXH3_64<'_> {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
         unsafe {
-            C::XXH3_64bits_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len());
+            C::XXH3_64bits_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len() as u64);
         }
     }
 
@@ -125,7 +125,7 @@ fn xxh128_to_u128(val: C::XXH128_hash_t) -> u128 {
 impl XXH3_128<'_> {
     pub fn hash(bytes: &[u8]) -> u128 {
         let r = unsafe {
-            C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len())
+            C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len() as u64)
         };
         xxh128_to_u128(r)
     }
@@ -133,8 +133,8 @@ impl XXH3_128<'_> {
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u128 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let r = C::XXH3_128bits_withSecret(
-            bytes.as_ptr() as *const c_void, bytes.len(),
-            entropy.as_ptr() as *const c_void, entropy.len());
+            bytes.as_ptr() as *const c_void, bytes.len() as u64,
+            entropy.as_ptr() as *const c_void, entropy.len() as u64);
         xxh128_to_u128(r)
     }
 
@@ -146,7 +146,7 @@ impl XXH3_128<'_> {
 
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
         let r = unsafe {
-            C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len(), seed)
+            C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
         };
         xxh128_to_u128(r)
     }
@@ -167,7 +167,7 @@ impl XXH3_128<'_> {
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_128bits_reset_withSecret(
             r.as_mut_ptr() as *mut C::XXH3_state_t,
-            entropy.as_ptr() as *const c_void, entropy.len());
+            entropy.as_ptr() as *const c_void, entropy.len() as u64);
         XXH3_128 {
             state: r.assume_init(),
             entropy_lifetime: PhantomData,
@@ -189,7 +189,7 @@ impl XXH3_128<'_> {
 
     pub fn write(&mut self, bytes: &[u8]) {
         unsafe {
-            C::XXH3_128bits_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len());
+            C::XXH3_128bits_update(&mut self.state, bytes.as_ptr() as *const c_void, bytes.len() as u64);
         }
     }
 
