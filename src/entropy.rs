@@ -11,6 +11,7 @@ pub struct EntropyPool {
 }
 
 impl PartialEq for EntropyPool {
+    #[inline]
     fn eq(&self, otr: &Self) -> bool {
         let a: &[u8] = &self.entropy;
         let b: &[u8] = &otr.entropy;
@@ -34,12 +35,14 @@ impl fmt::Debug for EntropyPool {
 impl Eq for EntropyPool {}
 
 impl EntropyPool {
+    #[inline]
     fn new() -> Self {
         Self {
             entropy: [0u8; ENTROPY_POOL_SIZE],
         }
     }
 
+    #[inline]
     pub fn randomize() -> Self {
         let mut r = Self::new();
         getrandom(&mut r.entropy).unwrap();
@@ -47,6 +50,7 @@ impl EntropyPool {
         r
     }
 
+    #[inline]
     pub fn with_seed(seed: u64) -> Self {
         let mut r = Self::new();
         unsafe { C::XXH3_XXHRS_initCustomSecret(r.entropy.as_mut_ptr(), seed) }
@@ -54,6 +58,7 @@ impl EntropyPool {
         r
     }
 
+    #[inline]
     pub fn with_key_shake128(key: &[u8]) -> Self {
         let mut r = Self::new();
         let mut h = Shake::v128();

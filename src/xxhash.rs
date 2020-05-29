@@ -13,24 +13,29 @@ pub struct XXH32 {
 }
 
 impl Default for XXH32 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl XXH32 {
+    #[inline]
     pub fn hash(bytes: &[u8]) -> u32 {
         XXH32::hash_with_seed(0, bytes)
     }
 
+    #[inline]
     pub fn hash_with_seed(seed: u32, bytes: &[u8]) -> u32 {
         unsafe { C::XXH32(bytes.as_ptr() as *const c_void, bytes.len(), seed) }
     }
 
+    #[inline]
     pub fn new() -> XXH32 {
         XXH32::with_seed(0)
     }
 
+    #[inline]
     pub fn with_seed(seed: u32) -> XXH32 {
         unsafe {
             let mut r = MaybeUninit::<C::XXH32_state_t>::uninit();
@@ -41,6 +46,7 @@ impl XXH32 {
         }
     }
 
+    #[inline]
     pub fn write(&mut self, bytes: &[u8]) {
         unsafe {
             C::XXH32_update(
@@ -51,6 +57,7 @@ impl XXH32 {
         }
     }
 
+    #[inline]
     pub fn finish(&self) -> u32 {
         unsafe { C::XXH32_digest(&self.state) }
     }
@@ -62,24 +69,29 @@ pub struct XXH64 {
 }
 
 impl Default for XXH64 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl XXH64 {
+    #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
         XXH64::hash_with_seed(0, bytes)
     }
 
+    #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe { C::XXH64(bytes.as_ptr() as *const c_void, bytes.len(), seed) }
     }
 
+    #[inline]
     pub fn new() -> XXH64 {
         XXH64::with_seed(0)
     }
 
+    #[inline]
     pub fn with_seed(seed: u64) -> XXH64 {
         unsafe {
             let mut r = MaybeUninit::<C::XXH64_state_t>::uninit();
@@ -92,6 +104,7 @@ impl XXH64 {
 }
 
 impl Hasher for XXH64 {
+    #[inline]
     fn write(&mut self, bytes: &[u8]) {
         unsafe {
             C::XXH64_update(
@@ -102,6 +115,7 @@ impl Hasher for XXH64 {
         }
     }
 
+    #[inline]
     fn finish(&self) -> u64 {
         unsafe { C::XXH64_digest(&self.state) }
     }

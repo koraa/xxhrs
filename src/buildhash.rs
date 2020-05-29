@@ -12,12 +12,14 @@ pub struct RandomStateXXH32 {
 }
 
 impl Default for RandomStateXXH32 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl RandomStateXXH32 {
+    #[inline]
     pub fn new() -> Self {
         let mut seed = [0u8; 4];
         getrandom(&mut seed).unwrap();
@@ -26,6 +28,7 @@ impl RandomStateXXH32 {
         }
     }
 
+    #[inline]
     pub fn build_hasher(&self) -> XXH32 {
         XXH32::with_seed(self.seed)
     }
@@ -37,6 +40,7 @@ pub struct RandomStateXXH64 {
 }
 
 impl Default for RandomStateXXH64 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -55,6 +59,7 @@ impl RandomStateXXH64 {
 impl BuildHasher for RandomStateXXH64 {
     type Hasher = XXH64;
 
+    #[inline]
     fn build_hasher(&self) -> Self::Hasher {
         Self::Hasher::with_seed(self.seed)
     }
@@ -66,12 +71,14 @@ pub struct RandomStateXXH3_64 {
 }
 
 impl Default for RandomStateXXH3_64 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl RandomStateXXH3_64 {
+    #[inline]
     pub fn new() -> Self {
         Self {
             pool: EntropyPool::randomize(),
@@ -82,6 +89,7 @@ impl RandomStateXXH3_64 {
 impl BuildHasher for RandomStateXXH3_64 {
     type Hasher = XXH3_64<'static>;
 
+    #[inline]
     fn build_hasher(&self) -> Self::Hasher {
         Self::Hasher::with_entropy(&self.pool)
     }
@@ -93,18 +101,21 @@ pub struct RandomStateXXH3_128 {
 }
 
 impl Default for RandomStateXXH3_128 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl RandomStateXXH3_128 {
+    #[inline]
     pub fn new() -> Self {
         Self {
             pool: EntropyPool::randomize(),
         }
     }
 
+    #[inline]
     pub fn build_hasher(&self) -> XXH3_128<'static> {
         XXH3_128::with_entropy(&self.pool)
     }

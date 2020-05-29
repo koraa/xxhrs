@@ -17,16 +17,19 @@ pub struct XXH3_64<'a> {
 }
 
 impl Default for XXH3_64<'_> {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl XXH3_64<'_> {
+    #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
         unsafe { C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len()) }
     }
 
+    #[inline]
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u64 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         C::XXH3_64bits_withSecret(
@@ -37,14 +40,17 @@ impl XXH3_64<'_> {
         )
     }
 
+    #[inline]
     pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u64 {
         unsafe { Self::hash_with_entropy_buffer(&entropy.entropy, bytes) }
     }
 
+    #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe { C::XXH3_64bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len(), seed) }
     }
 
+    #[inline]
     pub fn new() -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -56,6 +62,7 @@ impl XXH3_64<'_> {
         }
     }
 
+    #[inline]
     pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -70,6 +77,7 @@ impl XXH3_64<'_> {
         }
     }
 
+    #[inline]
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -86,6 +94,7 @@ impl XXH3_64<'_> {
 }
 
 impl Hasher for XXH3_64<'_> {
+    #[inline]
     fn write(&mut self, bytes: &[u8]) {
         unsafe {
             C::XXH3_64bits_update(
@@ -96,6 +105,7 @@ impl Hasher for XXH3_64<'_> {
         }
     }
 
+    #[inline]
     fn finish(&self) -> u64 {
         unsafe { C::XXH3_64bits_digest(&self.state) }
     }
@@ -108,21 +118,25 @@ pub struct XXH3_128<'a> {
 }
 
 impl Default for XXH3_128<'_> {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[inline]
 fn xxh128_to_u128(val: C::XXH128_hash_t) -> u128 {
     (val.low64 as u128) | (val.high64 as u128) << 64
 }
 
 impl XXH3_128<'_> {
+    #[inline]
     pub fn hash(bytes: &[u8]) -> u128 {
         let r = unsafe { C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len()) };
         xxh128_to_u128(r)
     }
 
+    #[inline]
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u128 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let r = C::XXH3_128bits_withSecret(
@@ -134,16 +148,19 @@ impl XXH3_128<'_> {
         xxh128_to_u128(r)
     }
 
+    #[inline]
     pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u128 {
         unsafe { Self::hash_with_entropy_buffer(&entropy.entropy, bytes) }
     }
 
+    #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
         let r =
             unsafe { C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len(), seed) };
         xxh128_to_u128(r)
     }
 
+    #[inline]
     pub fn new() -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -155,6 +172,7 @@ impl XXH3_128<'_> {
         }
     }
 
+    #[inline]
     pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_128<'a> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -169,6 +187,7 @@ impl XXH3_128<'_> {
         }
     }
 
+    #[inline]
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -183,6 +202,7 @@ impl XXH3_128<'_> {
         }
     }
 
+    #[inline]
     pub fn write(&mut self, bytes: &[u8]) {
         unsafe {
             C::XXH3_128bits_update(
@@ -193,6 +213,7 @@ impl XXH3_128<'_> {
         }
     }
 
+    #[inline]
     pub fn finish(&self) -> u128 {
         let r = unsafe { C::XXH3_128bits_digest(&self.state) };
         xxh128_to_u128(r)
