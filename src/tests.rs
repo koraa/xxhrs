@@ -1,6 +1,6 @@
 use crate::{
     buildhash::{RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64},
-    entropy::EntropyPool,
+    entropy::{EntropyPool, ENTROPY_POOL_SIZE},
     xxh3::{XXH3_128, XXH3_64},
     xxhash::{XXH32, XXH64},
 };
@@ -30,6 +30,8 @@ static SEED64_ENTROPY: EntropyPool = EntropyPool {
 const SECRET_ENTROPY: EntropyPool = EntropyPool {
     entropy: *include_bytes!("fixtures/secret_entropy"),
 };
+
+const ENTROPY_POOL_42_DEBUG: &str = include_str!("fixtures/entropy_pool_42_debug");
 
 #[test]
 fn test_entropy_derivation() {
@@ -91,6 +93,10 @@ fn test_streaming() {
         ($out:ident <- $typ:ty: $var:expr) => {{
             let mut gen : $typ = $var;
 
+            gen.finish(); // can finish before write
+
+            let mut gen_clone_1 = gen.clone(); // test clone
+
             let mut off : usize = 0;
             for sz in BLOCK_SIZE.iter().cycle() {
                 let end = min(off+sz, DATA.len());
@@ -98,13 +104,19 @@ fn test_streaming() {
                 off = end;
 
                 gen.write(block);
+                gen_clone_1.write(block);
 
                 if off == DATA.len() {
                     break;
                 }
             }
 
+            let gen_clone_2 = gen.clone(); // test clone
+
             assert_eq!(gen.finish(), $out);
+            assert_eq!(gen.finish(), $out); // can finish twice
+            assert_eq!(gen_clone_1.finish(), $out);
+            assert_eq!(gen_clone_2.finish(), $out);
         }};
 
         // Without type
@@ -143,6 +155,12 @@ fn test_streaming() {
         XXH3_128_SEEDED <- XXH3_128::with_entropy(&SEED64_ENTROPY),
         XXH3_128_KEYED  <- XXH3_128::with_entropy(&SECRET_ENTROPY),
 
+        // Entropy cloning
+        XXH3_64_SEEDED <- { XXH3_64::with_entropy( &SEED64_ENTROPY.clone() )},
+        XXH3_64_KEYED  <- { XXH3_64::with_entropy( &SECRET_ENTROPY.clone() )},
+        XXH3_128_SEEDED <- { XXH3_128::with_entropy( &SEED64_ENTROPY.clone() )},
+        XXH3_128_KEYED  <- { XXH3_128::with_entropy( &SECRET_ENTROPY.clone() )},
+
         XXH32_HASH <- XXH32: Default::default(),
         XXH64_HASH <- XXH64: Default::default(),
         XXH3_64_HASH  <- XXH3_64: Default::default(),
@@ -171,10 +189,17 @@ fn test_hasher_iface() {
 
 #[test]
 fn test_random_entropy_pool() {
+    assert_ne!(EntropyPool::randomize(), EntropyPool::randomize());
     assert_ne!(
         XXH3_128::hash_with_entropy(&EntropyPool::randomize(), b""),
         XXH3_128::hash_with_entropy(&EntropyPool::randomize(), b"")
     );
+}
+
+#[test]
+fn test_entropy_pool_clone() {
+    let pool = EntropyPool::randomize();
+    assert_eq!(pool, pool.clone());
 }
 
 #[test]
@@ -194,6 +219,7 @@ fn test_build_hasher() {
             let gen = $hasher;
             let a = hash_now!(gen, b"42");
             assert_eq!(a, hash_now!(gen, b"42"));
+            assert_eq!(a, hash_now!(gen.clone(), b"42")); // Cloning RandomState
             assert!(set.insert(a as u128));
         }};
     }
@@ -228,4 +254,35 @@ fn test_hash_set() {
 
     test_random_state!(RandomStateXXH64);
     test_random_state!(RandomStateXXH3_64);
+}
+
+#[test]
+fn test_debug_print() {
+    macro_rules! assert_debug {
+        ($in:expr, $out:expr) => {
+            assert_eq!(format!("{:?}", $in), $out);
+        };
+    };
+
+    let pool = EntropyPool {
+        entropy: [42u8; ENTROPY_POOL_SIZE],
+    };
+
+    assert_debug!(pool, ENTROPY_POOL_42_DEBUG);
+    assert_debug!(
+        RandomStateXXH32 { seed: 42 },
+        "RandomStateXXH32 { seed: 42 }"
+    );
+    assert_debug!(
+        RandomStateXXH64 { seed: 42 },
+        "RandomStateXXH64 { seed: 42 }"
+    );
+    assert_debug!(
+        RandomStateXXH3_64 { pool: pool.clone() },
+        format!("RandomStateXXH3_64 {{ pool: {} }}", ENTROPY_POOL_42_DEBUG)
+    );
+    assert_debug!(
+        RandomStateXXH3_128 { pool: pool.clone() },
+        format!("RandomStateXXH3_128 {{ pool: {} }}", ENTROPY_POOL_42_DEBUG)
+    );
 }

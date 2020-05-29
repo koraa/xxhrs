@@ -10,6 +10,7 @@ use crate::{entropy::EntropyPool, xxhash_bindings as C};
 // XXH3_128bits_reset, XXH3_128bits_reset_withSeed, XXH3_128bits_reset_withSecret,
 // XXH3_128bits_update, XXH3_128bits_digest
 
+#[derive(Clone)]
 pub struct XXH3_64<'a> {
     state: C::XXH3_state_t,
     entropy_lifetime: PhantomData<&'a [u8]>,
@@ -100,6 +101,7 @@ impl Hasher for XXH3_64<'_> {
     }
 }
 
+#[derive(Clone)]
 pub struct XXH3_128<'a> {
     state: C::XXH3_state_t,
     entropy_lifetime: PhantomData<&'a [u8]>,

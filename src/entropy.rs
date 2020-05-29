@@ -5,7 +5,7 @@ use tiny_keccak::{Hasher, Shake, Xof};
 
 pub const ENTROPY_POOL_SIZE: usize = C::XXH3_SECRET_DEFAULT_SIZE as usize;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct EntropyPool {
     pub entropy: [u8; ENTROPY_POOL_SIZE as usize],
 }

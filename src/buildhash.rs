@@ -6,8 +6,9 @@ use crate::{
 use getrandom::getrandom;
 use std::{default::Default, hash::BuildHasher};
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RandomStateXXH32 {
-    seed: u32,
+    pub seed: u32,
 }
 
 impl Default for RandomStateXXH32 {
@@ -30,8 +31,9 @@ impl RandomStateXXH32 {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RandomStateXXH64 {
-    seed: u64,
+    pub seed: u64,
 }
 
 impl Default for RandomStateXXH64 {
@@ -58,8 +60,9 @@ impl BuildHasher for RandomStateXXH64 {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct RandomStateXXH3_64 {
-    pool: EntropyPool,
+    pub pool: EntropyPool,
 }
 
 impl Default for RandomStateXXH3_64 {
@@ -84,8 +87,9 @@ impl BuildHasher for RandomStateXXH3_64 {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct RandomStateXXH3_128 {
-    pool: EntropyPool,
+    pub pool: EntropyPool,
 }
 
 impl Default for RandomStateXXH3_128 {

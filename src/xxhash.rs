@@ -7,6 +7,7 @@ use crate::xxhash_bindings as C;
 // XXH32, XXH32_reset, XXH32_update, XXH32_digest,
 // XXH64, XXH64_reset, XXH64_update, XXH64_digest,
 
+#[derive(Clone)]
 pub struct XXH32 {
     state: C::XXH32_state_t,
 }
@@ -55,6 +56,7 @@ impl XXH32 {
     }
 }
 
+#[derive(Clone)]
 pub struct XXH64 {
     state: C::XXH64_state_t,
 }
