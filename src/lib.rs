@@ -2,11 +2,11 @@
 #[macro_use]
 extern crate doc_comment;
 
-mod xxhash_bindings;
-mod xxhash;
-mod xxh3;
-mod entropy;
 mod buildhash;
+mod entropy;
+mod xxh3;
+mod xxhash;
+mod xxhash_bindings;
 
 #[cfg(test)]
 mod tests;
@@ -14,7 +14,7 @@ mod tests;
 #[cfg(doctest)]
 doctest!("../readme.md");
 
-pub use xxhash::*;
-pub use xxh3::*;
-pub use entropy::*;
 pub use buildhash::*;
+pub use entropy::*;
+pub use xxh3::*;
+pub use xxhash::*;

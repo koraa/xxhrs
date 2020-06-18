@@ -1,36 +1,34 @@
-
-use std::{cmp::min, default::Default};
-use std::collections::{HashSet, HashMap};
-use std::hash::{Hasher, BuildHasher};
 use crate::{
-    xxhash::{XXH32, XXH64},
-    xxh3::{XXH3_64, XXH3_128},
-    buildhash::{RandomStateXXH32, RandomStateXXH64, RandomStateXXH3_64, RandomStateXXH3_128},
+    buildhash::{RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64},
     entropy::EntropyPool,
+    xxh3::{XXH3_128, XXH3_64},
+    xxhash::{XXH32, XXH64},
 };
+use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasher, Hasher};
+use std::{cmp::min, default::Default};
 
-const SEED32 :  u32 = 0xf7649871;
-const SEED64 :  u64 = 0x06cd630df7649871;
-const XXH32_HASH      :  u32 = 0xf466cd9b;
-const XXH32_SEEDED    :  u32 = 0x7ac7100f;
-const XXH64_HASH      :  u64 = 0xb047e931fe218abd;
-const XXH64_SEEDED    :  u64 = 0x12b0dbd4bd5ac33a;
-const XXH3_64_HASH    :  u64 = 0x59f41ae8c1844b05;
-const XXH3_64_SEEDED  :  u64 = 0xa5b0cc590ec81f32;
-const XXH3_64_KEYED   :  u64 = 0x011baa23b829ca6c;
-const XXH3_128_HASH   : u128 = 0x085fd9804f34051d8a24edfe37edf1ea;
-const XXH3_128_SEEDED : u128 = 0x9c43c2c76f8b3de0bf15a1f1e41d08ae;
-const XXH3_128_KEYED  : u128 = 0x36f5626bdda9d901df1bdd186c9fdf37;
+const SEED32: u32 = 0xf7649871;
+const SEED64: u64 = 0x06cd630df7649871;
+const XXH32_HASH: u32 = 0xf466cd9b;
+const XXH32_SEEDED: u32 = 0x7ac7100f;
+const XXH64_HASH: u64 = 0xb047e931fe218abd;
+const XXH64_SEEDED: u64 = 0x12b0dbd4bd5ac33a;
+const XXH3_64_HASH: u64 = 0x59f41ae8c1844b05;
+const XXH3_64_SEEDED: u64 = 0xa5b0cc590ec81f32;
+const XXH3_64_KEYED: u64 = 0x011baa23b829ca6c;
+const XXH3_128_HASH: u128 = 0x085fd9804f34051d8a24edfe37edf1ea;
+const XXH3_128_SEEDED: u128 = 0x9c43c2c76f8b3de0bf15a1f1e41d08ae;
+const XXH3_128_KEYED: u128 = 0x36f5626bdda9d901df1bdd186c9fdf37;
 
+const SECRET: &[u8] = include_bytes!("fixtures/secret");
+const DATA: &[u8] = include_bytes!("fixtures/data");
 
-const SECRET : &[u8] = include_bytes!("fixtures/secret");
-const DATA : &[u8] = include_bytes!("fixtures/data");
-
-static SEED64_ENTROPY : EntropyPool = EntropyPool {
-    entropy: *include_bytes!("fixtures/seed64_entropy")
+static SEED64_ENTROPY: EntropyPool = EntropyPool {
+    entropy: *include_bytes!("fixtures/seed64_entropy"),
 };
-const SECRET_ENTROPY : EntropyPool = EntropyPool {
-    entropy: *include_bytes!("fixtures/secret_entropy")
+const SECRET_ENTROPY: EntropyPool = EntropyPool {
+    entropy: *include_bytes!("fixtures/secret_entropy"),
 };
 
 #[test]
@@ -41,28 +39,52 @@ fn test_entropy_derivation() {
 
 #[test]
 fn test_one_shot() {
-    assert_eq!(XXH32::hash(DATA),                   XXH32_HASH);
+    assert_eq!(XXH32::hash(DATA), XXH32_HASH);
     assert_eq!(XXH32::hash_with_seed(SEED32, DATA), XXH32_SEEDED);
-    assert_eq!(XXH64::hash(DATA),                   XXH64_HASH);
+    assert_eq!(XXH64::hash(DATA), XXH64_HASH);
     assert_eq!(XXH64::hash_with_seed(SEED64, DATA), XXH64_SEEDED);
-    assert_eq!(XXH3_64::hash(DATA),                     XXH3_64_HASH);
-    assert_eq!(XXH3_64::hash_with_entropy(&SEED64_ENTROPY, DATA), XXH3_64_SEEDED);
-    assert_eq!(XXH3_64::hash_with_entropy(&SECRET_ENTROPY, DATA), XXH3_64_KEYED);
-    assert_eq!(XXH3_128::hash(DATA),                     XXH3_128_HASH);
-    assert_eq!(XXH3_128::hash_with_entropy(&SEED64_ENTROPY, DATA), XXH3_128_SEEDED);
-    assert_eq!(XXH3_128::hash_with_entropy(&SECRET_ENTROPY, DATA), XXH3_128_KEYED);
+    assert_eq!(XXH3_64::hash(DATA), XXH3_64_HASH);
+    assert_eq!(
+        XXH3_64::hash_with_entropy(&SEED64_ENTROPY, DATA),
+        XXH3_64_SEEDED
+    );
+    assert_eq!(
+        XXH3_64::hash_with_entropy(&SECRET_ENTROPY, DATA),
+        XXH3_64_KEYED
+    );
+    assert_eq!(XXH3_128::hash(DATA), XXH3_128_HASH);
+    assert_eq!(
+        XXH3_128::hash_with_entropy(&SEED64_ENTROPY, DATA),
+        XXH3_128_SEEDED
+    );
+    assert_eq!(
+        XXH3_128::hash_with_entropy(&SECRET_ENTROPY, DATA),
+        XXH3_128_KEYED
+    );
 
     unsafe {
-        assert_eq!(XXH3_64::hash_with_entropy_buffer(&SEED64_ENTROPY.entropy, DATA), XXH3_64_SEEDED);
-        assert_eq!(XXH3_64::hash_with_entropy_buffer(&SECRET_ENTROPY.entropy, DATA), XXH3_64_KEYED);
-        assert_eq!(XXH3_128::hash_with_entropy_buffer(&SEED64_ENTROPY.entropy, DATA), XXH3_128_SEEDED);
-        assert_eq!(XXH3_128::hash_with_entropy_buffer(&SECRET_ENTROPY.entropy, DATA), XXH3_128_KEYED);
+        assert_eq!(
+            XXH3_64::hash_with_entropy_buffer(&SEED64_ENTROPY.entropy, DATA),
+            XXH3_64_SEEDED
+        );
+        assert_eq!(
+            XXH3_64::hash_with_entropy_buffer(&SECRET_ENTROPY.entropy, DATA),
+            XXH3_64_KEYED
+        );
+        assert_eq!(
+            XXH3_128::hash_with_entropy_buffer(&SEED64_ENTROPY.entropy, DATA),
+            XXH3_128_SEEDED
+        );
+        assert_eq!(
+            XXH3_128::hash_with_entropy_buffer(&SECRET_ENTROPY.entropy, DATA),
+            XXH3_128_KEYED
+        );
     }
 }
 
 #[test]
 fn test_streaming() {
-    const BLOCK_SIZE : &[usize] = &[0, 1, 2, 3, 4, 7, 11, 31, 63, 89];
+    const BLOCK_SIZE: &[usize] = &[0, 1, 2, 3, 4, 7, 11, 31, 63, 89];
 
     macro_rules! test_stream {
         // Full version
@@ -151,7 +173,8 @@ fn test_hasher_iface() {
 fn test_random_entropy_pool() {
     assert_ne!(
         XXH3_128::hash_with_entropy(&EntropyPool::randomize(), b""),
-        XXH3_128::hash_with_entropy(&EntropyPool::randomize(), b""));
+        XXH3_128::hash_with_entropy(&EntropyPool::randomize(), b"")
+    );
 }
 
 #[test]
@@ -163,7 +186,7 @@ fn test_build_hasher() {
             let mut hasher = $bh.build_hasher();
             hasher.write($val);
             hasher.finish()
-        }}
+        }};
     }
 
     macro_rules! test_random_state_instance {
@@ -172,7 +195,7 @@ fn test_build_hasher() {
             let a = hash_now!(gen, b"42");
             assert_eq!(a, hash_now!(gen, b"42"));
             assert!(set.insert(a as u128));
-        }}
+        }};
     }
 
     macro_rules! test_random_state {
