@@ -1,24 +1,28 @@
-use std::{hash::BuildHasher, default::Default};
-use getrandom::getrandom;
 use crate::{
-    xxhash::{XXH32, XXH64},
-    xxh3::{XXH3_64, XXH3_128},
     entropy::EntropyPool,
+    xxh3::{XXH3_128, XXH3_64},
+    xxhash::{XXH32, XXH64},
 };
+use getrandom::getrandom;
+use std::{default::Default, hash::BuildHasher};
 
 pub struct RandomStateXXH32 {
-    seed: u32
+    seed: u32,
 }
 
 impl Default for RandomStateXXH32 {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RandomStateXXH32 {
     pub fn new() -> Self {
         let mut seed = [0u8; 4];
         getrandom(&mut seed).unwrap();
-        Self { seed: u32::from_ne_bytes(seed) }
+        Self {
+            seed: u32::from_ne_bytes(seed),
+        }
     }
 
     pub fn build_hasher(&self) -> XXH32 {
@@ -27,18 +31,22 @@ impl RandomStateXXH32 {
 }
 
 pub struct RandomStateXXH64 {
-    seed: u64
+    seed: u64,
 }
 
 impl Default for RandomStateXXH64 {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RandomStateXXH64 {
     pub fn new() -> Self {
         let mut seed = [0u8; 8];
         getrandom(&mut seed).unwrap();
-        Self { seed: u64::from_ne_bytes(seed) }
+        Self {
+            seed: u64::from_ne_bytes(seed),
+        }
     }
 }
 
@@ -51,16 +59,20 @@ impl BuildHasher for RandomStateXXH64 {
 }
 
 pub struct RandomStateXXH3_64 {
-    pool: EntropyPool
+    pool: EntropyPool,
 }
 
 impl Default for RandomStateXXH3_64 {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RandomStateXXH3_64 {
     pub fn new() -> Self {
-        Self { pool: EntropyPool::randomize() }
+        Self {
+            pool: EntropyPool::randomize(),
+        }
     }
 }
 
@@ -73,16 +85,20 @@ impl BuildHasher for RandomStateXXH3_64 {
 }
 
 pub struct RandomStateXXH3_128 {
-    pool: EntropyPool
+    pool: EntropyPool,
 }
 
 impl Default for RandomStateXXH3_128 {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RandomStateXXH3_128 {
     pub fn new() -> Self {
-        Self { pool: EntropyPool::randomize() }
+        Self {
+            pool: EntropyPool::randomize(),
+        }
     }
 
     pub fn build_hasher(&self) -> XXH3_128<'static> {
