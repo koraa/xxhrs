@@ -22,6 +22,14 @@ shell-words = "^0.1.0"
 
 [dev-dependencies]
 doc-comment = "0.3.3"
+criterion = "0.3"
+twox-hash = "1.5.0"
+fxhash = "0.2.1"
+ahash = "0.3.8"
 
 [profile.release]
 lto = true
+
+[[bench]]
+name = "bench"
+harness = false
