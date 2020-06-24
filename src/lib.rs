@@ -8,7 +8,7 @@ mod xxh3;
 mod xxhash;
 mod xxhash_bindings;
 
-#[cfg(test)]
+#[cfg(all(test))]
 mod tests;
 
 #[cfg(doctest)]
