@@ -26,7 +26,7 @@ impl Default for XXH3_64<'_> {
 impl XXH3_64<'_> {
     #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
-        unsafe { C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len()) }
+        unsafe { C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len() as u64) }
     }
 
     #[inline]
@@ -34,9 +34,9 @@ impl XXH3_64<'_> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         C::XXH3_64bits_withSecret(
             bytes.as_ptr() as *const c_void,
-            bytes.len(),
+            bytes.len() as u64,
             entropy.as_ptr() as *const c_void,
-            entropy.len(),
+            entropy.len() as u64,
         )
     }
 
@@ -47,7 +47,10 @@ impl XXH3_64<'_> {
 
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
-        unsafe { C::XXH3_64bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len(), seed) }
+        unsafe {
+            C::XXH3_64bits_withSeed(
+                bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
+        }
     }
 
     #[inline]
@@ -69,7 +72,7 @@ impl XXH3_64<'_> {
         C::XXH3_64bits_reset_withSecret(
             r.as_mut_ptr() as *mut C::XXH3_state_t,
             entropy.as_ptr() as *const c_void,
-            entropy.len(),
+            entropy.len() as u64,
         );
         XXH3_64 {
             state: r.assume_init(),
@@ -100,7 +103,7 @@ impl Hasher for XXH3_64<'_> {
             C::XXH3_64bits_update(
                 &mut self.state,
                 bytes.as_ptr() as *const c_void,
-                bytes.len(),
+                bytes.len() as u64,
             );
         }
     }
@@ -132,7 +135,7 @@ fn xxh128_to_u128(val: C::XXH128_hash_t) -> u128 {
 impl XXH3_128<'_> {
     #[inline]
     pub fn hash(bytes: &[u8]) -> u128 {
-        let r = unsafe { C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len()) };
+        let r = unsafe { C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len() as u64) };
         xxh128_to_u128(r)
     }
 
@@ -141,9 +144,9 @@ impl XXH3_128<'_> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let r = C::XXH3_128bits_withSecret(
             bytes.as_ptr() as *const c_void,
-            bytes.len(),
+            bytes.len() as u64,
             entropy.as_ptr() as *const c_void,
-            entropy.len(),
+            entropy.len() as u64,
         );
         xxh128_to_u128(r)
     }
@@ -156,7 +159,7 @@ impl XXH3_128<'_> {
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
         let r =
-            unsafe { C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len(), seed) };
+            unsafe { C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) };
         xxh128_to_u128(r)
     }
 
@@ -179,7 +182,7 @@ impl XXH3_128<'_> {
         C::XXH3_128bits_reset_withSecret(
             r.as_mut_ptr() as *mut C::XXH3_state_t,
             entropy.as_ptr() as *const c_void,
-            entropy.len(),
+            entropy.len() as u64,
         );
         XXH3_128 {
             state: r.assume_init(),
@@ -208,7 +211,7 @@ impl XXH3_128<'_> {
             C::XXH3_128bits_update(
                 &mut self.state,
                 bytes.as_ptr() as *const c_void,
-                bytes.len(),
+                bytes.len() as u64,
             );
         }
     }
