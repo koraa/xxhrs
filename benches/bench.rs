@@ -130,6 +130,9 @@ fn bench_hash(c: &mut Criterion) {
                 });
 
                 b_streaming!(format!("{}::new", n), || <$t>::new());
+                b_streaming!(format!("{}::with_seed", n), || <$t>::with_seed(black_box(
+                    9055972853411395268
+                ),));
                 b_streaming!(format!("{}::with_entropy", n), || <$t>::with_entropy(
                     black_box(&ENTROPY)
                 ));

@@ -66,6 +66,21 @@ impl XXH3_64<'_> {
     }
 
     #[inline]
+    pub fn with_seed(seed: u64) -> XXH3_64<'static> {
+        unsafe {
+            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            C::XXH3_64bits_reset_withSeed(
+                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                seed,
+            );
+            XXH3_64 {
+                state: r.assume_init(),
+                entropy_lifetime: PhantomData,
+            }
+        }
+    }
+
+    #[inline]
     pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
@@ -255,6 +270,21 @@ impl XXH3_128<'_> {
         XXH3_128 {
             state: r.assume_init(),
             entropy_lifetime: PhantomData,
+        }
+    }
+
+    #[inline]
+    pub fn with_seed(seed: u64) -> XXH3_128<'static> {
+        unsafe {
+            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            C::XXH3_128bits_reset_withSeed(
+                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                seed,
+            );
+            XXH3_128 {
+                state: r.assume_init(),
+                entropy_lifetime: PhantomData,
+            }
         }
     }
 
