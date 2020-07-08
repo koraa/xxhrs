@@ -59,6 +59,19 @@ impl EntropyPool {
     }
 
     #[inline]
+    pub fn with_key(key: &[u8]) -> Self {
+        let mut r = Self::new();
+        unsafe {
+            C::XXH3_generateSecret(
+                r.entropy.as_mut_ptr() as *mut c_void,
+                key.as_ptr() as *const c_void,
+                key.len() as u64,
+            );
+        }
+        r
+    }
+
+    #[inline]
     pub fn with_key_shake128(key: &[u8]) -> Self {
         let mut r = Self::new();
         let mut h = Shake::v128();

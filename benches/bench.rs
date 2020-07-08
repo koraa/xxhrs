@@ -30,7 +30,8 @@ use xxhrs::{
     XXH32, XXH3_128, XXH3_64, XXH64,
 };
 
-pub const DATA: &[u8] = include_bytes!("../src/fixtures/data");
+const DATA: &[u8] = include_bytes!("../src/fixtures/data");
+const SECRET: &[u8] = include_bytes!("../src/fixtures/secret");
 const ENTROPY: EntropyPool = EntropyPool {
     entropy: *include_bytes!("../src/fixtures/secret_entropy"),
 };
@@ -39,7 +40,28 @@ pub fn type_basename<T>() -> &'static str {
     type_name::<T>().rsplit("::").next().unwrap()
 }
 
-fn bench_all(c: &mut Criterion) {
+fn bench_entropy_derivation(c: &mut Criterion) {
+    let mut g = c.benchmark_group("entropy_derivation");
+    g.sample_size(1000);
+    g.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
+
+    macro_rules! b {
+        ($name:expr, $fn:expr) => {{
+            g.bench_function($name, |b| {
+                b.iter(|| $fn());
+            });
+        }};
+    };
+
+    b!("randomize", || EntropyPool::randomize());
+    b!("with_seed", || EntropyPool::with_seed(black_box(42)));
+    b!("with_key", || EntropyPool::with_key(black_box(SECRET)));
+    b!("with_key_shake128", || EntropyPool::with_key_shake128(
+        black_box(SECRET)
+    ));
+}
+
+fn bench_hash(c: &mut Criterion) {
     let mut g = c.benchmark_group("hashes");
 
     g.sample_size(1000);
@@ -142,7 +164,7 @@ fn bench_all(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, bench_all);
+criterion_group!(benches, bench_entropy_derivation, bench_hash);
 
 // Benchmark output
 
@@ -319,13 +341,9 @@ where
     }
 }
 
-fn main() -> Result<()> {
-    // Run benchmarks
-    benches();
-    Criterion::default().configure_from_args().final_summary();
-
+fn gen_interactive_chart(group: &str) -> Result<()> {
     // Load samples from
-    let exp = Regex::new(r"criterion/hashes/\w+/\d+/new/raw.csv$")?;
+    let exp = Regex::new(&format!(r"criterion/{}/\w+/\d+/new/raw.csv$", group))?;
     let samples = WalkDir::new("target/criterion")
         .into_iter()
         .map(|p| p?.path().to_str().map(String::from).ok())
@@ -341,9 +359,10 @@ fn main() -> Result<()> {
     })?;
 
     // Write to output file
-    let mut j = JsonSerializer::new(fs::File::create(
-        "target/criterion/hashes/report/chart_data.js",
-    )?);
+    let mut j = JsonSerializer::new(fs::File::create(format!(
+        "target/criterion/{}/report/chart_data.js",
+        group
+    ))?);
 
     j.w.write_all(b"window.chart_data = ")?;
 
@@ -400,6 +419,18 @@ fn main() -> Result<()> {
     j.end()?.end()?;
 
     j.w.write_all(b";")?;
+
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    // Run benchmarks
+    benches();
+    Criterion::default().configure_from_args().final_summary();
+
+    // Analyze
+    gen_interactive_chart("entropy_derivation")?;
+    gen_interactive_chart("hashes")?;
 
     Ok(())
 }
