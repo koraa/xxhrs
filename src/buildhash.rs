@@ -6,9 +6,9 @@ use crate::{
 use getrandom::getrandom;
 use std::{default::Default, hash::BuildHasher};
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct RandomStateXXH32 {
-    pub seed: u32,
+    pub proto: XXH32,
 }
 
 impl Default for RandomStateXXH32 {
@@ -24,19 +24,19 @@ impl RandomStateXXH32 {
         let mut seed = [0u8; 4];
         getrandom(&mut seed).unwrap();
         Self {
-            seed: u32::from_ne_bytes(seed),
+            proto: XXH32::with_seed(u32::from_ne_bytes(seed)),
         }
     }
 
     #[inline]
     pub fn build_hasher(&self) -> XXH32 {
-        XXH32::with_seed(self.seed)
+        self.proto.clone()
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct RandomStateXXH64 {
-    pub seed: u64,
+    pub proto: XXH64,
 }
 
 impl Default for RandomStateXXH64 {
@@ -51,7 +51,7 @@ impl RandomStateXXH64 {
         let mut seed = [0u8; 8];
         getrandom(&mut seed).unwrap();
         Self {
-            seed: u64::from_ne_bytes(seed),
+            proto: XXH64::with_seed(u64::from_ne_bytes(seed)),
         }
     }
 }
@@ -61,13 +61,13 @@ impl BuildHasher for RandomStateXXH64 {
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
-        Self::Hasher::with_seed(self.seed)
+        self.proto.clone()
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone)]
 pub struct RandomStateXXH3_64 {
-    pub pool: EntropyPool,
+    pub proto: XXH3_64<'static>,
 }
 
 impl Default for RandomStateXXH3_64 {
@@ -81,7 +81,7 @@ impl RandomStateXXH3_64 {
     #[inline]
     pub fn new() -> Self {
         Self {
-            pool: EntropyPool::randomize(),
+            proto: XXH3_64::with_entropy(&EntropyPool::randomize())
         }
     }
 }
@@ -91,13 +91,13 @@ impl BuildHasher for RandomStateXXH3_64 {
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
-        Self::Hasher::with_entropy(&self.pool)
+        self.proto.clone()
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone)]
 pub struct RandomStateXXH3_128 {
-    pub pool: EntropyPool,
+    pub proto: XXH3_128<'static>,
 }
 
 impl Default for RandomStateXXH3_128 {
@@ -111,12 +111,12 @@ impl RandomStateXXH3_128 {
     #[inline]
     pub fn new() -> Self {
         Self {
-            pool: EntropyPool::randomize(),
+            proto: XXH3_128::with_entropy(&EntropyPool::randomize()),
         }
     }
 
     #[inline]
     pub fn build_hasher(&self) -> XXH3_128<'static> {
-        XXH3_128::with_entropy(&self.pool)
+        self.proto.clone()
     }
 }
