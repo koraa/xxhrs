@@ -4,7 +4,7 @@ use crate::{
     xxhash::{XXH32, XXH64},
 };
 use getrandom::getrandom;
-use std::{default::Default, hash::BuildHasher};
+use std::{default::Default, hash::BuildHasher, rc::Rc};
 
 #[derive(Clone)]
 pub struct RandomStateXXH32 {
@@ -67,7 +67,7 @@ impl BuildHasher for RandomStateXXH64 {
 
 #[derive(Clone)]
 pub struct RandomStateXXH3_64 {
-    pub proto: XXH3_64<'static>,
+    pub entropy: Rc<EntropyPool>,
 }
 
 impl Default for RandomStateXXH3_64 {
@@ -81,7 +81,7 @@ impl RandomStateXXH3_64 {
     #[inline]
     pub fn new() -> Self {
         Self {
-            proto: XXH3_64::with_entropy(&EntropyPool::randomize())
+            entropy: Rc::new(EntropyPool::randomize()),
         }
     }
 }
@@ -91,13 +91,13 @@ impl BuildHasher for RandomStateXXH3_64 {
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
-        self.proto.clone()
+        XXH3_64::with_entropy_rc(self.entropy.clone())
     }
 }
 
 #[derive(Clone)]
 pub struct RandomStateXXH3_128 {
-    pub proto: XXH3_128<'static>,
+    pub entropy: Rc<EntropyPool>,
 }
 
 impl Default for RandomStateXXH3_128 {
@@ -111,12 +111,12 @@ impl RandomStateXXH3_128 {
     #[inline]
     pub fn new() -> Self {
         Self {
-            proto: XXH3_128::with_entropy(&EntropyPool::randomize()),
+            entropy: Rc::new(EntropyPool::randomize()),
         }
     }
 
     #[inline]
     pub fn build_hasher(&self) -> XXH3_128<'static> {
-        self.proto.clone()
+        XXH3_128::with_entropy_rc(self.entropy.clone())
     }
 }

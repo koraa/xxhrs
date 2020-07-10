@@ -1,4 +1,4 @@
-use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void};
+use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void, rc::Rc};
 
 use crate::{entropy::EntropyPool, xxhash_bindings as C};
 
@@ -10,28 +10,215 @@ use crate::{entropy::EntropyPool, xxhash_bindings as C};
 // XXH3_128bits_reset, XXH3_128bits_reset_withSeed, XXH3_128bits_reset_withSecret,
 // XXH3_128bits_update, XXH3_128bits_digest
 
-#[derive(Clone)]
-pub struct XXH3_64<'a> {
-    state: C::XXH3_state_t,
-    entropy_lifetime: PhantomData<&'a [u8]>,
+pub trait XXH3Private<H> {
+    fn hash(bytes: &[u8]) -> H;
+    fn hash_with_seed(seed: u64, bytes: &[u8]) -> H;
+    unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> H;
+
+    fn new() -> Self;
+    fn with_seed(seed: u64) -> Self;
+    unsafe fn with_entropy_buffer(entropy: &[u8]) -> Self;
+    fn with_entropy_copy(entropy: &EntropyPool) -> Self;
+
+    fn write(&mut self, bytes: &[u8]);
+    fn finish(&self) -> H;
 }
 
-impl Default for XXH3_64<'_> {
+#[derive(Clone)]
+pub enum EntropyRef<'a> {
+    Dummy(PhantomData<&'a [u8]>),
+    Rc(Rc<EntropyPool>)
+}
+
+#[derive(Clone)]
+pub struct Buf {
+    len: usize,
+    data: [u8; 512],
+}
+
+impl Buf {
+    fn new() -> Self {
+        Self {
+            len: 0,
+            data: [0u8; 512]
+        }
+    }
+
+    fn write(&mut self, bytes: &[u8]) -> bool {
+        if (self.data.len() - self.len) < bytes.len() {
+            false
+        } else {
+            self.data[self.len..][..bytes.len()].copy_from_slice(bytes);
+            self.len += bytes.len();
+            true
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum BufferedHasher<'a, H, Impl: XXH3Private<H>> {
+    Default(Buf, PhantomData<H>),
+    Seed(Buf, u64),
+    Entropy(Buf, &'a [u8]),
+    EntropyRc(Buf, Rc<EntropyPool>),
+    Streaming(Impl, EntropyRef<'a>)
+}
+
+impl<H, Impl: XXH3Private<H>> BufferedHasher<'_, H, Impl> {
     #[inline]
+    pub fn hash(bytes: &[u8]) -> H {
+        Impl::hash(bytes)
+    }
+
+    #[inline]
+    pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> H {
+        Impl::hash_with_seed(seed, bytes)
+    }
+
+    #[inline]
+    pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> H {
+        assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
+        Impl::hash_with_entropy_buffer(entropy, bytes)
+    }
+
+    #[inline]
+    pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> H {
+        unsafe {
+            Impl::hash_with_entropy_buffer(&entropy.entropy, bytes)
+        }
+    }
+
+    #[inline]
+    pub fn new() -> BufferedHasher<'static, H, Impl> {
+        BufferedHasher::Default(Buf::new(), PhantomData)
+    }
+
+    #[inline]
+    pub fn with_seed(seed: u64) -> BufferedHasher<'static, H, Impl> {
+        BufferedHasher::Seed(Buf::new(), seed)
+    }
+
+    #[inline]
+    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> BufferedHasher<'a, H, Impl> {
+        assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
+        BufferedHasher::Entropy(Buf::new(), entropy)
+    }
+
+    #[inline]
+    pub fn with_entropy<'a>(entropy: &'a EntropyPool) -> BufferedHasher<'a, H, Impl> {
+        unsafe {
+            Self::with_entropy_buffer(&entropy.entropy)
+        }
+    }
+
+    #[inline]
+    pub fn with_entropy_rc(entropy: Rc<EntropyPool>) -> BufferedHasher<'static, H, Impl> {
+        BufferedHasher::EntropyRc(Buf::new(), entropy)
+    }
+
+    #[inline]
+    pub fn with_entropy_copy(entropy: &EntropyPool) -> BufferedHasher<'static, H, Impl> {
+        BufferedHasher::Streaming(Impl::with_entropy_copy(entropy), EntropyRef::Dummy(PhantomData))
+    }
+
+    #[inline]
+    pub fn write(&mut self, bytes: &[u8]) {
+        match self {
+            BufferedHasher::Default(ref mut buf, _) => {
+                if !buf.write(bytes) {
+                    let mut im = Impl::new();
+                    im.write(&buf.data[..buf.len]);
+                    im.write(bytes);
+                    *self = BufferedHasher::Streaming(im, EntropyRef::Dummy(PhantomData))
+                }
+            }
+            BufferedHasher::Seed(ref mut buf, seed) => {
+                if !buf.write(bytes) {
+                    let mut im = Impl::with_seed(*seed);
+                    im.write(&buf.data[..buf.len]);
+                    im.write(bytes);
+                    *self = BufferedHasher::Streaming(im, EntropyRef::Dummy(PhantomData))
+                }
+            }
+            BufferedHasher::Entropy(ref mut buf, entropy) => {
+                if !buf.write(bytes) {
+                    let mut im = unsafe {
+                        Impl::with_entropy_buffer(entropy)
+                    };
+                    im.write(&buf.data[..buf.len]);
+                    im.write(bytes);
+                    *self = BufferedHasher::Streaming(im, EntropyRef::Dummy(PhantomData))
+                }
+            }
+            BufferedHasher::EntropyRc(ref mut buf, entropy) => {
+                if !buf.write(bytes) {
+                    let mut im = unsafe {
+                        Impl::with_entropy_buffer(&entropy.as_ref().entropy)
+                    };
+                    im.write(&buf.data[..buf.len]);
+                    im.write(bytes);
+                    *self = BufferedHasher::Streaming(im, EntropyRef::Rc(entropy.clone()))
+                }
+            }
+            BufferedHasher::Streaming(ref mut im, _) => {
+                im.write(bytes)
+            }
+        }
+    }
+
+    #[inline]
+    pub fn finish(&self) -> H {
+        match self {
+            BufferedHasher::Default(ref buf, _) => Self::hash(&buf.data),
+            BufferedHasher::Seed(ref buf, seed) => Self::hash_with_seed(*seed, &buf.data),
+            BufferedHasher::Entropy(ref buf, entropy) => unsafe {
+                Self::hash_with_entropy_buffer(entropy, &buf.data)
+            },
+            BufferedHasher::EntropyRc(ref buf, entropy) => unsafe {
+                Self::hash_with_entropy_buffer(&entropy.as_ref().entropy, &buf.data)
+            },
+            BufferedHasher::Streaming(ref im, _) => im.finish()
+        }
+    }
+}
+
+impl<H, Impl: XXH3Private<H>> Default for BufferedHasher<'_, H, Impl> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl XXH3_64<'_> {
+impl<Impl: XXH3Private<u64>> Hasher for BufferedHasher<'_, u64, Impl> {
+    fn write(&mut self, bytes: &[u8]) {
+        Self::write(self, bytes)
+    }
+
+    fn finish(&self) -> u64 {
+        Self::finish(&self)
+    }
+}
+
+#[derive(Clone)]
+pub struct XXH3_64Impl {
+    state: C::XXH3_state_t,
+}
+
+impl XXH3Private<u64> for XXH3_64Impl {
     #[inline]
-    pub fn hash(bytes: &[u8]) -> u64 {
+    fn hash(bytes: &[u8]) -> u64 {
         unsafe { C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len() as u64) }
     }
 
     #[inline]
-    pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u64 {
-        assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
+    fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
+        unsafe {
+            C::XXH3_64bits_withSeed(
+                bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
+        }
+    }
+
+    #[inline]
+    unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u64 {
         C::XXH3_64bits_withSecret(
             bytes.as_ptr() as *const c_void,
             bytes.len() as u64,
@@ -41,47 +228,32 @@ impl XXH3_64<'_> {
     }
 
     #[inline]
-    pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u64 {
-        unsafe { Self::hash_with_entropy_buffer(&entropy.entropy, bytes) }
-    }
-
-    #[inline]
-    pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
-        unsafe {
-            C::XXH3_64bits_withSeed(
-                bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
-        }
-    }
-
-    #[inline]
-    pub fn new() -> XXH3_64<'static> {
+    fn new() -> Self {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
             C::XXH3_64bits_reset(r.as_mut_ptr() as *mut C::XXH3_state_t);
-            XXH3_64 {
+            Self {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
             }
         }
     }
 
     #[inline]
-    pub fn with_seed(seed: u64) -> XXH3_64<'static> {
+    fn with_seed(seed: u64) -> Self {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
             C::XXH3_64bits_reset_withSeed(
                 r.as_mut_ptr() as *mut C::XXH3_state_t,
                 seed,
             );
-            XXH3_64 {
+            Self {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
             }
         }
     }
 
     #[inline]
-    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
+    unsafe fn with_entropy_buffer(entropy: &[u8]) -> Self {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_64bits_reset_withSecret(
@@ -89,29 +261,25 @@ impl XXH3_64<'_> {
             entropy.as_ptr() as *const c_void,
             entropy.len() as u64,
         );
-        XXH3_64 {
+        Self {
             state: r.assume_init(),
-            entropy_lifetime: PhantomData,
         }
     }
 
     #[inline]
-    pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
+    fn with_entropy_copy(entropy: &EntropyPool) -> Self {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
             C::XXH3_XXHRS_64bits_reset_withSecretCopy(
                 r.as_mut_ptr() as *mut C::XXH3_state_t,
                 entropy.entropy.as_ptr() as *const c_void,
             );
-            XXH3_64 {
+            Self {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
             }
         }
     }
-}
 
-impl Hasher for XXH3_64<'_> {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
         unsafe {
@@ -190,16 +358,8 @@ impl Hasher for XXH3_64Hmac {
 }
 
 #[derive(Clone)]
-pub struct XXH3_128<'a> {
-    state: C::XXH3_state_t,
-    entropy_lifetime: PhantomData<&'a [u8]>,
-}
-
-impl Default for XXH3_128<'_> {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
+pub struct XXH3_128Impl {
+    state: C::XXH3_state_t
 }
 
 #[inline]
@@ -215,15 +375,15 @@ fn u128_to_xxh128(val: u128) -> C::XXH128_hash_t {
     }
 }
 
-impl XXH3_128<'_> {
+impl XXH3Private<u128> for XXH3_128Impl {
     #[inline]
-    pub fn hash(bytes: &[u8]) -> u128 {
+    fn hash(bytes: &[u8]) -> u128 {
         let r = unsafe { C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len() as u64) };
         xxh128_to_u128(r)
     }
 
     #[inline]
-    pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u128 {
+    unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u128 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let r = C::XXH3_128bits_withSecret(
             bytes.as_ptr() as *const c_void,
@@ -235,31 +395,38 @@ impl XXH3_128<'_> {
     }
 
     #[inline]
-    pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u128 {
-        unsafe { Self::hash_with_entropy_buffer(&entropy.entropy, bytes) }
-    }
-
-    #[inline]
-    pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
-        let r =
-            unsafe { C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) };
+    fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
+        let r = unsafe { C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) };
         xxh128_to_u128(r)
     }
 
     #[inline]
-    pub fn new() -> XXH3_128<'static> {
+    fn new() -> Self {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
             C::XXH3_128bits_reset(r.as_mut_ptr() as *mut C::XXH3_state_t);
-            XXH3_128 {
+            Self {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
             }
         }
     }
 
     #[inline]
-    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_128<'a> {
+    fn with_seed(seed: u64) -> Self {
+        unsafe {
+            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            C::XXH3_128bits_reset_withSeed(
+                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                seed,
+            );
+            Self {
+                state: r.assume_init(),
+            }
+        }
+    }
+
+    #[inline]
+    unsafe fn with_entropy_buffer(entropy: &[u8]) -> Self {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_128bits_reset_withSecret(
@@ -267,44 +434,27 @@ impl XXH3_128<'_> {
             entropy.as_ptr() as *const c_void,
             entropy.len() as u64,
         );
-        XXH3_128 {
-            state: r.assume_init(),
-            entropy_lifetime: PhantomData,
+        Self {
+            state: r.assume_init()
         }
     }
 
     #[inline]
-    pub fn with_seed(seed: u64) -> XXH3_128<'static> {
-        unsafe {
-            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_128bits_reset_withSeed(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                seed,
-            );
-            XXH3_128 {
-                state: r.assume_init(),
-                entropy_lifetime: PhantomData,
-            }
-        }
-    }
-
-    #[inline]
-    pub fn with_entropy(entropy: &EntropyPool) -> XXH3_128<'static> {
+    fn with_entropy_copy(entropy: &EntropyPool) -> Self {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
             C::XXH3_XXHRS_128bits_reset_withSecretCopy(
                 r.as_mut_ptr() as *mut C::XXH3_state_t,
                 entropy.entropy.as_ptr() as *const c_void,
             );
-            XXH3_128 {
+            Self {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
             }
         }
     }
 
     #[inline]
-    pub fn write(&mut self, bytes: &[u8]) {
+    fn write(&mut self, bytes: &[u8]) {
         unsafe {
             C::XXH3_128bits_update(
                 &mut self.state,
@@ -315,11 +465,14 @@ impl XXH3_128<'_> {
     }
 
     #[inline]
-    pub fn finish(&self) -> u128 {
+    fn finish(&self) -> u128 {
         let r = unsafe { C::XXH3_128bits_digest(&self.state) };
         xxh128_to_u128(r)
     }
 }
+
+pub type XXH3_64<'a> = BufferedHasher<'a, u64, XXH3_64Impl>;
+pub type XXH3_128<'a> = BufferedHasher<'a, u128, XXH3_128Impl>;
 
 #[derive(Clone)]
 pub struct XXH3_128Hmac {
