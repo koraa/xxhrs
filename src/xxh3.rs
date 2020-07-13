@@ -1,5 +1,4 @@
-use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void};
-
+use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void, rc::Rc};
 use crate::{entropy::EntropyPool, xxhash_bindings as C};
 
 // XXH3_64bits, XXH3_64bits_withSecret, XXH3_64bits_withSeed,
@@ -11,9 +10,15 @@ use crate::{entropy::EntropyPool, xxhash_bindings as C};
 // XXH3_128bits_update, XXH3_128bits_digest
 
 #[derive(Clone)]
+pub enum EntropyRef<'a> {
+    Dummy(PhantomData<&'a [u8]>),
+    Rc(Rc<EntropyPool>)
+}
+
+#[derive(Clone)]
 pub struct XXH3_64<'a> {
     state: C::XXH3_state_t,
-    entropy_lifetime: PhantomData<&'a [u8]>,
+    entropy: EntropyRef<'a>
 }
 
 impl Default for XXH3_64<'_> {
@@ -60,7 +65,61 @@ impl XXH3_64<'_> {
             C::XXH3_64bits_reset(r.as_mut_ptr() as *mut C::XXH3_state_t);
             XXH3_64 {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
+                entropy: EntropyRef::Dummy(PhantomData),
+            }
+        }
+    }
+
+    unsafe fn reset_with_entropy_impl(entropy: &[u8]) -> C::XXH3_state_t {
+        assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
+        let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+        C::XXH3_64bits_reset_withSecret(
+            r.as_mut_ptr() as *mut C::XXH3_state_t,
+            entropy.as_ptr() as *const c_void,
+            entropy.len() as u64,
+        );
+
+        r.assume_init()
+    }
+
+    #[inline]
+    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
+        XXH3_64 {
+            state: Self::reset_with_entropy_impl(entropy),
+            entropy: EntropyRef::Dummy(PhantomData),
+        }
+    }
+
+
+    #[inline]
+    pub fn with_entropy<'a>(entropy: &EntropyPool) -> XXH3_64<'a> {
+        let state = unsafe { Self::reset_with_entropy_impl(&entropy.entropy) };
+        XXH3_64 {
+            state,
+            entropy: EntropyRef::Dummy(PhantomData),
+        }
+    }
+
+    #[inline]
+    pub fn with_entropy_rc(entropy: Rc<EntropyPool>) -> XXH3_64<'static> {
+        let state = unsafe { Self::reset_with_entropy_impl(&entropy.entropy) };
+        XXH3_64 {
+            state,
+            entropy: EntropyRef::Rc(entropy),
+        }
+    }
+
+    #[inline]
+    pub fn with_entropy_copy(entropy: &EntropyPool) -> XXH3_64<'static> {
+        unsafe {
+            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            C::XXH3_XXHRS_64bits_reset_withSecretCopy(
+                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                entropy.entropy.as_ptr() as *const c_void,
+            );
+            XXH3_64 {
+                state: r.assume_init(),
+                entropy: EntropyRef::Dummy(PhantomData),
             }
         }
     }
@@ -75,37 +134,7 @@ impl XXH3_64<'_> {
             );
             XXH3_64 {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
-            }
-        }
-    }
-
-    #[inline]
-    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
-        assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
-        let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-        C::XXH3_64bits_reset_withSecret(
-            r.as_mut_ptr() as *mut C::XXH3_state_t,
-            entropy.as_ptr() as *const c_void,
-            entropy.len() as u64,
-        );
-        XXH3_64 {
-            state: r.assume_init(),
-            entropy_lifetime: PhantomData,
-        }
-    }
-
-    #[inline]
-    pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
-        unsafe {
-            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_XXHRS_64bits_reset_withSecretCopy(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                entropy.entropy.as_ptr() as *const c_void,
-            );
-            XXH3_64 {
-                state: r.assume_init(),
-                entropy_lifetime: PhantomData,
+                entropy: EntropyRef::Dummy(PhantomData),
             }
         }
     }
@@ -192,7 +221,7 @@ impl Hasher for XXH3_64Hmac {
 #[derive(Clone)]
 pub struct XXH3_128<'a> {
     state: C::XXH3_state_t,
-    entropy_lifetime: PhantomData<&'a [u8]>,
+    entropy: EntropyRef<'a>,
 }
 
 impl Default for XXH3_128<'_> {
@@ -253,13 +282,12 @@ impl XXH3_128<'_> {
             C::XXH3_128bits_reset(r.as_mut_ptr() as *mut C::XXH3_state_t);
             XXH3_128 {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
+                entropy: EntropyRef::Dummy(PhantomData),
             }
         }
     }
 
-    #[inline]
-    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_128<'a> {
+    unsafe fn reset_with_entropy_impl(entropy: &[u8]) -> C::XXH3_state_t {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_128bits_reset_withSecret(
@@ -267,9 +295,49 @@ impl XXH3_128<'_> {
             entropy.as_ptr() as *const c_void,
             entropy.len() as u64,
         );
+
+        r.assume_init()
+    }
+
+    #[inline]
+    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_128<'a> {
         XXH3_128 {
-            state: r.assume_init(),
-            entropy_lifetime: PhantomData,
+            state: Self::reset_with_entropy_impl(entropy),
+            entropy: EntropyRef::Dummy(PhantomData),
+        }
+    }
+
+
+    #[inline]
+    pub fn with_entropy<'a>(entropy: &EntropyPool) -> XXH3_128<'a> {
+        let state = unsafe { Self::reset_with_entropy_impl(&entropy.entropy) };
+        XXH3_128 {
+            state,
+            entropy: EntropyRef::Dummy(PhantomData),
+        }
+    }
+
+    #[inline]
+    pub fn with_entropy_rc(entropy: Rc<EntropyPool>) -> XXH3_128<'static> {
+        let state = unsafe { Self::reset_with_entropy_impl(&entropy.entropy) };
+        XXH3_128 {
+            state,
+            entropy: EntropyRef::Rc(entropy),
+        }
+    }
+
+    #[inline]
+    pub fn with_entropy_copy(entropy: &EntropyPool) -> XXH3_128<'static> {
+        unsafe {
+            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            C::XXH3_XXHRS_128bits_reset_withSecretCopy(
+                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                entropy.entropy.as_ptr() as *const c_void,
+            );
+            XXH3_128 {
+                state: r.assume_init(),
+                entropy: EntropyRef::Dummy(PhantomData),
+            }
         }
     }
 
@@ -283,22 +351,7 @@ impl XXH3_128<'_> {
             );
             XXH3_128 {
                 state: r.assume_init(),
-                entropy_lifetime: PhantomData,
-            }
-        }
-    }
-
-    #[inline]
-    pub fn with_entropy(entropy: &EntropyPool) -> XXH3_128<'static> {
-        unsafe {
-            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_XXHRS_128bits_reset_withSecretCopy(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                entropy.entropy.as_ptr() as *const c_void,
-            );
-            XXH3_128 {
-                state: r.assume_init(),
-                entropy_lifetime: PhantomData,
+                entropy: EntropyRef::Dummy(PhantomData),
             }
         }
     }
