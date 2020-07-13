@@ -126,17 +126,7 @@ impl XXH3_64<'_> {
 
     #[inline]
     pub fn with_seed(seed: u64) -> XXH3_64<'static> {
-        unsafe {
-            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_64bits_reset_withSeed(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                seed,
-            );
-            XXH3_64 {
-                state: r.assume_init(),
-                entropy: EntropyRef::Dummy(PhantomData),
-            }
-        }
+        Self::with_entropy_copy(&EntropyPool::with_seed(seed))
     }
 }
 
@@ -343,17 +333,7 @@ impl XXH3_128<'_> {
 
     #[inline]
     pub fn with_seed(seed: u64) -> XXH3_128<'static> {
-        unsafe {
-            let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_128bits_reset_withSeed(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                seed,
-            );
-            XXH3_128 {
-                state: r.assume_init(),
-                entropy: EntropyRef::Dummy(PhantomData),
-            }
-        }
+        Self::with_entropy_copy(&EntropyPool::with_seed(seed))
     }
 
     #[inline]
