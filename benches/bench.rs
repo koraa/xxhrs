@@ -445,7 +445,6 @@ fn main() -> Result<()> {
     Criterion::default().configure_from_args().final_summary();
 
     // Analyze
-    gen_interactive_chart("entropy_derivation")?;
     gen_interactive_chart("hashes")?;
 
     Ok(())
