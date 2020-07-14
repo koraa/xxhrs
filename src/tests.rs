@@ -4,13 +4,10 @@ use crate::{
     xxh3::{XXH3_128, XXH3_64},
     xxhash::{XXH32, XXH64},
 };
-use std::{
-    collections::{HashMap, HashSet},
-    hash::{BuildHasher, Hasher},
-    cmp::min,
-    default::Default,
-    rc::Rc,
-};
+use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasher, Hasher};
+use std::{cmp::min, default::Default};
+
 
 const SEED32: u32 = 0xf7649871;
 const SEED64: u64 = 0x06cd630df7649871;
@@ -282,11 +279,11 @@ fn test_debug_print() {
         "RandomStateXXH64 { seed: 42 }"
     );
     assert_debug!(
-        RandomStateXXH3_64 { pool: Rc::new(pool.clone()) },
+        RandomStateXXH3_64 { pool: pool.clone() },
         format!("RandomStateXXH3_64 {{ pool: {} }}", ENTROPY_POOL_42_DEBUG)
     );
     assert_debug!(
-        RandomStateXXH3_128 { pool: Rc::new(pool.clone()) },
+        RandomStateXXH3_128 { pool: pool.clone() },
         format!("RandomStateXXH3_128 {{ pool: {} }}", ENTROPY_POOL_42_DEBUG)
     );
 }
