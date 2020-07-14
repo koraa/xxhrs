@@ -27,7 +27,7 @@ use twox_hash;
 use walkdir::WalkDir;
 use xxhrs::{
     EntropyPool, RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64,
-    XXH3_128Hmac, XXH3_64Hmac, XXH32, XXH3_128, XXH3_64, XXH64,
+    XXH32, XXH3_128, XXH3_64, XXH64,
 };
 
 const DATA: &[u8] = include_bytes!("../src/fixtures/data");
