@@ -1,6 +1,8 @@
 use crate::xxhash_bindings as C;
-use getrandom::getrandom;
 use std::{fmt, os::raw::c_void};
+
+#[cfg(feature = "random_entropy")]
+use getrandom::getrandom;
 
 pub const ENTROPY_POOL_SIZE: usize = C::XXH3_SECRET_DEFAULT_SIZE as usize;
 
@@ -42,6 +44,7 @@ impl EntropyPool {
     }
 
     #[inline]
+    #[cfg(feature = "random_entropy")]
     pub fn randomize() -> Self {
         let mut r = Self::new();
         getrandom(&mut r.entropy).unwrap();

@@ -10,8 +10,12 @@ repository = "https://github.com/koraa/xxhrs"
 categories = ["algorithms"]
 keywords = ["hash", "xxhash", "bindings", "xxh3", "xxhash"]
 
+[features]
+default = ["random_entropy"]
+random_entropy = ["getrandom"]
+
 [dependencies]
-getrandom = "0.1.14"
+getrandom = { version = "0.1.14", optional = true }
 
 [build-dependencies]
 bindgen = "0.54.1"

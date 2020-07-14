@@ -1,5 +1,4 @@
 use crate::{
-    buildhash::{RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64},
     entropy::{EntropyPool, ENTROPY_POOL_SIZE},
     xxh3::{XXH3_128, XXH3_64},
     xxhash::{XXH32, XXH64},
@@ -7,6 +6,9 @@ use crate::{
 use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hasher};
 use std::{cmp::min, default::Default};
+
+#[cfg(feature = "random_entropy")]
+use crate::buildhash::{RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64};
 
 const SEED32 :  u32 = 0xf7649871;
 const SEED64 :  u64 = 0x06cd630df7649871;
@@ -188,6 +190,7 @@ fn test_hasher_iface() {
 }
 
 #[test]
+#[cfg(feature = "random_entropy")]
 fn test_random_entropy_pool() {
     assert_ne!(EntropyPool::randomize(), EntropyPool::randomize());
     assert_ne!(
@@ -197,12 +200,14 @@ fn test_random_entropy_pool() {
 }
 
 #[test]
+#[cfg(feature = "random_entropy")]
 fn test_entropy_pool_clone() {
     let pool = EntropyPool::randomize();
     assert_eq!(pool, pool.clone());
 }
 
 #[test]
+#[cfg(feature = "random_entropy")]
 fn test_build_hasher() {
     let mut set = HashSet::<u128>::new();
 
@@ -240,6 +245,7 @@ fn test_build_hasher() {
 }
 
 #[test]
+#[cfg(feature = "random_entropy")]
 fn test_hash_set() {
     macro_rules! test_random_state {
         ($typ:ty) => {{
@@ -257,6 +263,7 @@ fn test_hash_set() {
 }
 
 #[test]
+#[cfg(feature = "random_entropy")]
 fn test_debug_print() {
     macro_rules! assert_debug {
         ($in:expr, $out:expr) => {

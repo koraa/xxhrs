@@ -19,6 +19,14 @@ hash.insert(42, "the answer");
 assert_eq!(hash.get(&42), Some(&"the answer"));
 ```
 
+## Testing
+
+```bash
+$ cargo test --all-features
+$ cargo test --no-default-features
+```
+
+
 ## License
 
 Copyright © (C) 2020, Karolin Varner. All rights reserved.
