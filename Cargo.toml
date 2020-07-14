@@ -12,8 +12,6 @@ keywords = ["hash", "xxhash", "bindings", "xxh3", "xxhash"]
 
 [dependencies]
 getrandom = "0.1.14"
-tiny-keccak = { version = "2.0.2", features = ["shake"] }
-bit-array = "0.4.4"
 
 [build-dependencies]
 bindgen = "0.54.1"
