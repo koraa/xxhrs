@@ -56,12 +56,6 @@ fn bench_entropy_derivation(c: &mut Criterion) {
     b!("randomize", || EntropyPool::randomize());
     b!("with_seed", || EntropyPool::with_seed(black_box(42)));
     b!("with_key", || EntropyPool::with_key(black_box(SECRET)));
-    b!("with_key_xxh3_hkfd", || EntropyPool::with_key_xxh3_hkdf(
-        black_box(SECRET)
-    ));
-    b!("with_key_shake128", || EntropyPool::with_key_shake128(
-        black_box(SECRET)
-    ));
 }
 
 fn bench_hash(c: &mut Criterion) {
@@ -147,9 +141,6 @@ fn bench_hash(c: &mut Criterion) {
 
         b_xxh3!(XXH3_64);
         b_xxh3!(XXH3_128);
-
-        b_xxhash!(XXH3_64Hmac);
-        b_xxhash!(XXH3_128Hmac);
 
         b_buildhash!("xxhrs::RandomStateXXH32", RandomStateXXH32);
         b_buildhash!("xxhrs::RandomStateXXH64", RandomStateXXH64);

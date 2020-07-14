@@ -1,7 +1,6 @@
 use crate::xxhash_bindings as C;
 use getrandom::getrandom;
 use std::{fmt, os::raw::c_void};
-use tiny_keccak::{Hasher, Shake, Xof};
 
 pub const ENTROPY_POOL_SIZE: usize = C::XXH3_SECRET_DEFAULT_SIZE as usize;
 
@@ -68,29 +67,6 @@ impl EntropyPool {
                 key.len() as u64,
             );
         }
-        r
-    }
-
-    #[inline]
-    pub fn with_key_xxh3_hkdf(key: &[u8]) -> Self {
-        let mut r = Self::new();
-        unsafe {
-            C::XXH3_XXHRS_128bit_hkdf(
-                r.entropy.as_mut_ptr() as *mut c_void,
-                key.as_ptr() as *const c_void,
-                key.len() as u64,
-            );
-        }
-        r
-    }
-
-    #[inline]
-    pub fn with_key_shake128(key: &[u8]) -> Self {
-        let mut r = Self::new();
-        let mut h = Shake::v128();
-        h.update(key);
-        h.squeeze(&mut r.entropy);
-
         r
     }
 }

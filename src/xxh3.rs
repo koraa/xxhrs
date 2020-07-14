@@ -1,5 +1,4 @@
 use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void};
-
 use crate::{entropy::EntropyPool, xxhash_bindings as C};
 
 // XXH3_64bits, XXH3_64bits_withSecret, XXH3_64bits_withSeed,
@@ -120,66 +119,6 @@ impl Hasher for XXH3_64<'_> {
 }
 
 #[derive(Clone)]
-pub struct XXH3_64Hmac {
-    state: C::XXH3_XXHRS_64bits_hmac_state
-}
-
-impl Default for XXH3_64Hmac {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl XXH3_64Hmac {
-    #[inline]
-    pub fn hash(bytes: &[u8]) -> u64 {
-        Self::hash_with_seed(0, bytes)
-    }
-
-    #[inline]
-    pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
-        unsafe { C::XXH3_XXHRS_64bits_hmac(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) }
-    }
-
-    #[inline]
-    pub fn new() -> Self {
-        Self::with_seed(0)
-    }
-
-    #[inline]
-    pub fn with_seed(seed: u64) -> Self {
-        let mut r = MaybeUninit::<C::XXH3_XXHRS_64bits_hmac_state>::uninit();
-        unsafe {
-            C::XXH3_XXHRS_64bits_hmac_reset(
-                r.as_mut_ptr() as *mut C::XXH3_XXHRS_64bits_hmac_state,
-                seed);
-            Self {
-                state: r.assume_init(),
-            }
-        }
-    }
-}
-
-impl Hasher for XXH3_64Hmac {
-    #[inline]
-    fn write(&mut self, bytes: &[u8]) {
-        unsafe {
-            C::XXH3_XXHRS_64bits_hmac_update(
-                &mut self.state,
-                bytes.as_ptr() as *const c_void,
-                bytes.len() as u64,
-            );
-        }
-    }
-
-    #[inline]
-    fn finish(&self) -> u64 {
-        unsafe { C::XXH3_XXHRS_64bits_hmac_digest(&self.state) }
-    }
-}
-
-#[derive(Clone)]
 pub struct XXH3_128<'a> {
     state: C::XXH3_state_t,
     entropy_lifetime: PhantomData<&'a [u8]>,
@@ -195,14 +134,6 @@ impl Default for XXH3_128<'_> {
 #[inline]
 fn xxh128_to_u128(val: C::XXH128_hash_t) -> u128 {
     (val.low64 as u128) | (val.high64 as u128) << 64
-}
-
-#[inline]
-fn u128_to_xxh128(val: u128) -> C::XXH128_hash_t {
-    C::XXH128_hash_t {
-        low64: val as u64,
-        high64: (val >> 64) as u64
-    }
 }
 
 impl XXH3_128<'_> {
@@ -298,66 +229,6 @@ impl XXH3_128<'_> {
     #[inline]
     pub fn finish(&self) -> u128 {
         let r = unsafe { C::XXH3_128bits_digest(&self.state) };
-        xxh128_to_u128(r)
-    }
-}
-
-#[derive(Clone)]
-pub struct XXH3_128Hmac {
-    state: C::XXH3_XXHRS_128bits_hmac_state
-}
-
-impl Default for XXH3_128Hmac {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl XXH3_128Hmac {
-    #[inline]
-    pub fn hash(bytes: &[u8]) -> u128 {
-        Self::hash_with_seed(0, bytes)
-    }
-
-    #[inline]
-    pub fn hash_with_seed(seed: u128, bytes: &[u8]) -> u128 {
-        let r = unsafe { C::XXH3_XXHRS_128bits_hmac(bytes.as_ptr() as *const c_void, bytes.len() as u64, u128_to_xxh128(seed)) };
-        xxh128_to_u128(r)
-    }
-
-    #[inline]
-    pub fn new() -> Self {
-        Self::with_seed(0)
-    }
-
-    #[inline]
-    pub fn with_seed(seed: u128) -> Self {
-        let mut r = MaybeUninit::<C::XXH3_XXHRS_128bits_hmac_state>::uninit();
-        unsafe {
-            C::XXH3_XXHRS_128bits_hmac_reset(
-                r.as_mut_ptr() as *mut C::XXH3_XXHRS_128bits_hmac_state,
-                u128_to_xxh128(seed));
-            Self {
-                state: r.assume_init(),
-            }
-        }
-    }
-
-    #[inline]
-    pub fn write(&mut self, bytes: &[u8]) {
-        unsafe {
-            C::XXH3_XXHRS_128bits_hmac_update(
-                &mut self.state,
-                bytes.as_ptr() as *const c_void,
-                bytes.len() as u64,
-            );
-        }
-    }
-
-    #[inline]
-    pub fn finish(&self) -> u128 {
-        let r = unsafe { C::XXH3_XXHRS_128bits_hmac_digest(&self.state) };
         xxh128_to_u128(r)
     }
 }
