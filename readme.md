@@ -60,12 +60,10 @@ assert_eq!(XXH64::hash_with_seed(1234, b"MyData"), 4228889600861627182);
 let mut h = XXH3_64::with_seed(1234);
 h.write(b"MyFirstData");
 h.write(b"MySecondData");
-assert_eq!(h.finish(), 0);
+assert_eq!(h.finish(), 8235025456677196530);
 
 // XXH3 128 bit version, straming hashing, with custom key
-let key = b"My Custom Key!";
-let entropy = EntropyPool::with_key(key); // Can be reused for extra performance!
-
+let entropy = EntropyPool::with_key(b"My Custom Key!"); // Can be reused for extra performance!
 let mut h = XXH3_128::with_entropy(&entropy);
 h.write(b"MyFirstData");
 h.write(b"MySecondData");

@@ -54,7 +54,6 @@ fn bench_entropy_derivation(c: &mut Criterion) {
     };
 
     b!("randomize", || EntropyPool::randomize());
-    b!("with_seed", || EntropyPool::with_seed(black_box(42)));
     b!("with_key", || EntropyPool::with_key(black_box(SECRET)));
 }
 
