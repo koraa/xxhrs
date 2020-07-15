@@ -1,6 +1,6 @@
 [package]
 name = "xxhrs"
-version = "0.0.2"
+version = "1.0.0"
 authors = ["Karolin Varner <karo@cupdev.net>"]
 edition = "2018"
 license = "BSD-3-Clause"
