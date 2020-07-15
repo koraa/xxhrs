@@ -1,6 +1,6 @@
 [package]
 name = "xxhrs"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Karolin Varner <karo@cupdev.net>"]
 edition = "2018"
 license = "BSD-3-Clause"
@@ -9,6 +9,7 @@ readme = "readme.md"
 repository = "https://github.com/koraa/xxhrs"
 categories = ["algorithms"]
 keywords = ["hash", "xxhash", "bindings", "xxh3", "xxhash"]
+documentation = "https://docs.rs/xxhrs"
 
 [features]
 default = ["random_entropy"]
