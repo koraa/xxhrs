@@ -1,22 +1,75 @@
 # xxhrs
 
-xxhash and xxh3 bindings for rust!
+Bindings to the xxhash C library. Covers the old xxhash functions as well as
+the new xxh3 hash function.
+
+## Use cases?
+
+This was written mainly so xxh3 can be evaluated for use in rust. If you just
+need an xxhash implementation, you can use [twox](https://crates.io/crates/twox-hash),
+if you want a fast hash function to use in hash tables you probably want [ahash](https://crates.io/crates/ahash).
+
+Currently xxh3 is still experimental and it's output can change, however
+as soon as it's implementation has stabilized, it's hash output will remain
+consistent across processes & computers.
+
+After that has happened, possible use cases for this crate are:
+
+* You specifically need a xxh3 implementation
+* You need high performance and one shot hashing is OK (you probably want xxh3_64)
+* You need high performance and you are hashing particularly long inputs (thousands of KB, again xxh3_64 is what you want)
+* You need a 128 bit hash function
+
+Note that if you are using xxhrs for performance, you should probably create benchmarks.
 
 ## Usage
 
+Cargo.toml
+
+```toml
+[dependencies]
+# Random entropy is enabled by default; it enables RandomState*
+# and EntropyPool::randomize()
+xxhrs = { version = "1.0", features = ["random_entriopy"] }
+```
+
 ```rust
-use std::collections::HashMap;
-use xxhrs::{RandomStateXXH64, RandomStateXXH3_64};
+use std::{collections::HashMap, hash::Hasher};
+use xxhrs::{
+  RandomStateXXH64, RandomStateXXH3_64, XXH32, XXH64,
+  XXH3_64, XXH3_128, EntropyPool
+};
 
 // Old XXHash 64 bit version
-let mut hash = HashMap::<i32, &str, RandomStateXXH64>::default();
-hash.insert(42, "the answer");
-assert_eq!(hash.get(&42), Some(&"the answer"));
+let mut h = HashMap::<i32, &str, RandomStateXXH64>::default();
+h.insert(42, "the answer");
+assert_eq!(h.get(&42), Some(&"the answer"));
 
 // XXH3 64 bit version
-let mut hash = HashMap::<i32, &str, RandomStateXXH64>::default();
-hash.insert(42, "the answer");
-assert_eq!(hash.get(&42), Some(&"the answer"));
+let mut h = HashMap::<i32, &str, RandomStateXXH64>::default();
+h.insert(42, "the answer");
+assert_eq!(h.get(&42), Some(&"the answer"));
+
+// XXHash 32 bit without seed, one shot hashing
+assert_eq!(XXH32::hash(b"MyData"), 1695511942);
+
+// XXHash 64 bit with seed, one shot hashing
+assert_eq!(XXH64::hash_with_seed(1234, b"MyData"), 4228889600861627182);
+
+// XXH3 64 bit version, streaming hashing, with seed
+let mut h = XXH3_64::with_seed(1234);
+h.write(b"MyFirstData");
+h.write(b"MySecondData");
+assert_eq!(h.finish(), 0);
+
+// XXH3 128 bit version, straming hashing, with custom key
+let key = b"My Custom Key!";
+let entropy = EntropyPool::with_key(key); // Can be reused for extra performance!
+
+let mut h = XXH3_128::with_entropy(&entropy);
+h.write(b"MyFirstData");
+h.write(b"MySecondData");
+assert_eq!(h.finish(), 49549903637678458428443811344187957401);
 ```
 
 ## Testing
@@ -25,7 +78,6 @@ assert_eq!(hash.get(&42), Some(&"the answer"));
 $ cargo test --all-features
 $ cargo test --no-default-features
 ```
-
 
 ## License
 

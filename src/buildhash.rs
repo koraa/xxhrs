@@ -6,6 +6,9 @@ use crate::{
 use getrandom::getrandom;
 use std::{default::Default, hash::BuildHasher};
 
+/// xxhash 32 bit version. Generates a randomized seed using getrandom().
+/// Because the associated hasher generates u32, this does not implement BuildHash,
+/// however this features the same interface.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RandomStateXXH32 {
     pub seed: u32,
@@ -34,6 +37,8 @@ impl RandomStateXXH32 {
     }
 }
 
+/// xxhash 64 bit version. Generates a randomized seed using getrandom().
+/// Implements BuildHasher.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RandomStateXXH64 {
     pub seed: u64,
@@ -65,6 +70,8 @@ impl BuildHasher for RandomStateXXH64 {
     }
 }
 
+/// xxh3 64 bit version. Generates a randomized seed using getrandom().
+/// Implements BuildHasher.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct RandomStateXXH3_64 {
     pub pool: EntropyPool,
@@ -95,6 +102,9 @@ impl BuildHasher for RandomStateXXH3_64 {
     }
 }
 
+/// xxh3 128 bit version. Generates a randomized seed using getrandom().
+/// Because the associated hasher generates u32, this does not implement BuildHash,
+/// however this features the same interface.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct RandomStateXXH3_128 {
     pub pool: EntropyPool,

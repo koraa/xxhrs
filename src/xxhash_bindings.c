@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "xxhash_bindings.h"
 
-void XXH3_XXHRS_initCustomSecret(uint8_t *customSecret, uint64_t seed64) {
+void XXH3_XXHRS_initCustomSecret(void *customSecret, uint64_t seed64) {
   XXH3_initCustomSecret(customSecret, seed64);
 }
 

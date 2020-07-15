@@ -9,6 +9,10 @@ use crate::{entropy::EntropyPool, xxhash_bindings as C};
 // XXH3_128bits_reset, XXH3_128bits_reset_withSeed, XXH3_128bits_reset_withSecret,
 // XXH3_128bits_update, XXH3_128bits_digest
 
+/// xxh3 64 bit c library bindings
+///
+/// ::default() and ::new() are equivalent; they construct the unseeded
+/// streaming variant…
 #[derive(Clone)]
 pub struct XXH3_64<'a> {
     state: C::XXH3_state_t,
@@ -23,11 +27,24 @@ impl Default for XXH3_64<'_> {
 }
 
 impl XXH3_64<'_> {
+    /// One-shot hashing
     #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
         unsafe { C::XXH3_64bits(bytes.as_ptr() as *const c_void, bytes.len() as u64) }
     }
 
+    /// One-shot hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_withSecret. You probably want
+    /// to use hash_with_entropy instead unless you really need to supply
+    /// custom size entropy buffers, in which case this is the function
+    /// to use.
+    ///
+    /// This function is marked unsafe just to encourage using the EntropyPool
+    /// abstraction which makes it hard to produce particularly unsafe entropy
+    /// pools.
+    ///
+    /// The entropy pool must be at least 136 bytes.
     #[inline]
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u64 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
@@ -39,11 +56,15 @@ impl XXH3_64<'_> {
         )
     }
 
+    /// One-shot hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_withSecret.
     #[inline]
     pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u64 {
         unsafe { Self::hash_with_entropy_buffer(&entropy.entropy, bytes) }
     }
 
+    /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe {
@@ -52,6 +73,7 @@ impl XXH3_64<'_> {
         }
     }
 
+    /// Streaming hashing
     #[inline]
     pub fn new() -> XXH3_64<'static> {
         unsafe {
@@ -64,6 +86,18 @@ impl XXH3_64<'_> {
         }
     }
 
+    /// Streaming hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_reset_withSecret.
+    ///
+    /// This function is marked unsafe to discourage it's use; use with_entropy
+    /// instead which copies the entropy (thus causing far fewer lifetime problems)
+    /// and uses the safer EntropyPool abstraction.
+    ///
+    /// Use this function if you really want to avoid the entropy copy
+    /// or if you really need to use a custom size entropy pool.
+    ///
+    /// The entropy pool must be at least 136 bytes.
     #[inline]
     pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
@@ -79,6 +113,9 @@ impl XXH3_64<'_> {
         }
     }
 
+    /// Streaming hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_reset_withSecret.
     #[inline]
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
         unsafe {
@@ -94,6 +131,7 @@ impl XXH3_64<'_> {
         }
     }
 
+    /// Streaming hashing with custom seed.
     #[inline]
     pub fn with_seed(seed: u64) -> XXH3_64<'static> {
         Self::with_entropy(&EntropyPool::with_seed(seed))
@@ -118,6 +156,13 @@ impl Hasher for XXH3_64<'_> {
     }
 }
 
+/// xxh3 64 bit c library bindings
+///
+/// Streaming mode is used just like the `Hasher` trait, but does
+/// not implement the trait because this returns u128, hasher requires u64
+///
+/// ::default() and ::new() are equivalent; they construct the unseeded
+/// streaming variant…
 #[derive(Clone)]
 pub struct XXH3_128<'a> {
     state: C::XXH3_state_t,
@@ -137,12 +182,25 @@ fn xxh128_to_u128(val: C::XXH128_hash_t) -> u128 {
 }
 
 impl XXH3_128<'_> {
+    /// One-shot hashing
     #[inline]
     pub fn hash(bytes: &[u8]) -> u128 {
         let r = unsafe { C::XXH3_128bits(bytes.as_ptr() as *const c_void, bytes.len() as u64) };
         xxh128_to_u128(r)
     }
 
+    /// One-shot hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_withSecret. You probably want
+    /// to use hash_with_entropy instead unless you really need to supply
+    /// custom size entropy buffers, in which case this is the function
+    /// to use.
+    ///
+    /// This function is marked unsafe just to encourage using the EntropyPool
+    /// abstraction which makes it hard to produce particularly unsafe entropy
+    /// pools.
+    ///
+    /// The entropy pool must be at least 136 bytes.
     #[inline]
     pub unsafe fn hash_with_entropy_buffer(entropy: &[u8], bytes: &[u8]) -> u128 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
@@ -155,11 +213,15 @@ impl XXH3_128<'_> {
         xxh128_to_u128(r)
     }
 
+    /// One-shot hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_withSecret.
     #[inline]
     pub fn hash_with_entropy(entropy: &EntropyPool, bytes: &[u8]) -> u128 {
         unsafe { Self::hash_with_entropy_buffer(&entropy.entropy, bytes) }
     }
 
+    /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
         let r =
@@ -167,6 +229,7 @@ impl XXH3_128<'_> {
         xxh128_to_u128(r)
     }
 
+    /// Streaming hashing
     #[inline]
     pub fn new() -> XXH3_128<'static> {
         unsafe {
@@ -179,6 +242,18 @@ impl XXH3_128<'_> {
         }
     }
 
+    /// Streaming hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_reset_withSecret.
+    ///
+    /// This function is marked unsafe to discourage it's use; use with_entropy
+    /// instead which copies the entropy (thus causing far fewer lifetime problems)
+    /// and uses the safer EntropyPool abstraction.
+    ///
+    /// Use this function if you really want to avoid the entropy copy
+    /// or if you really need to use a custom size entropy pool.
+    ///
+    /// The entropy pool must be at least 136 bytes.
     #[inline]
     pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_128<'a> {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
@@ -195,6 +270,9 @@ impl XXH3_128<'_> {
     }
 
 
+    /// Streaming hashing with custom entropy buffer.
+    ///
+    /// This corresponds to XXH3_64bits_reset_withSecret.
     #[inline]
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_128<'static> {
         unsafe {
@@ -210,6 +288,7 @@ impl XXH3_128<'_> {
         }
     }
 
+    /// Streaming hashing with custom seed.
     #[inline]
     pub fn with_seed(seed: u64) -> XXH3_128<'static> {
         Self::with_entropy(&EntropyPool::with_seed(seed))

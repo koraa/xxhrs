@@ -7,6 +7,10 @@ use crate::xxhash_bindings as C;
 // XXH32, XXH32_reset, XXH32_update, XXH32_digest,
 // XXH64, XXH64_reset, XXH64_update, XXH64_digest,
 
+/// xxhash 32 bit c library bindings
+///
+/// Streaming mode is used just like the `Hasher` trait, but does
+/// not implement the trait because this returns u32, hasher requires u64
 #[derive(Clone)]
 pub struct XXH32 {
     state: C::XXH32_state_t,
@@ -20,21 +24,25 @@ impl Default for XXH32 {
 }
 
 impl XXH32 {
+    /// One-shot hashing
     #[inline]
     pub fn hash(bytes: &[u8]) -> u32 {
         XXH32::hash_with_seed(0, bytes)
     }
 
+    /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u32, bytes: &[u8]) -> u32 {
         unsafe { C::XXH32(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) }
     }
 
+    /// Streaming hashing
     #[inline]
     pub fn new() -> XXH32 {
         XXH32::with_seed(0)
     }
 
+    /// Streaming hashing with seed
     #[inline]
     pub fn with_seed(seed: u32) -> XXH32 {
         unsafe {
@@ -63,6 +71,7 @@ impl XXH32 {
     }
 }
 
+/// xxhash 32 bit c library bindings
 #[derive(Clone)]
 pub struct XXH64 {
     state: C::XXH64_state_t,
@@ -76,21 +85,25 @@ impl Default for XXH64 {
 }
 
 impl XXH64 {
+    /// One-shot hashing
     #[inline]
     pub fn hash(bytes: &[u8]) -> u64 {
         XXH64::hash_with_seed(0, bytes)
     }
 
+    /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe { C::XXH64(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) }
     }
 
+    /// Streaming hashing
     #[inline]
     pub fn new() -> XXH64 {
         XXH64::with_seed(0)
     }
 
+    /// Streaming hashing with seed
     #[inline]
     pub fn with_seed(seed: u64) -> XXH64 {
         unsafe {

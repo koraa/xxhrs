@@ -6,6 +6,22 @@ use getrandom::getrandom;
 
 pub const ENTROPY_POOL_SIZE: usize = C::XXH3_SECRET_DEFAULT_SIZE as usize;
 
+/// Besides seeded and unseeded variants, XXH3 provides a keyed (`withSecret`)
+/// variant. This is a bit of a misnomer though, because these functions havea
+/// not been formally verified as message authentication codes; they also do
+/// not guarantee that the entire secret is used, the secret is impractically
+/// large (tens to hundreds of bytes) and pathological secrets are not handled
+/// well at all.
+///
+/// However, these functions are harder to revers than using seeds, in fact
+/// the seeded variant internally just uses a modified secret.
+///
+/// This is why xxhrs provides support for these, but renames the secrets "EntropyPool"
+/// to make it clear that it is not really a proper keyed hash.
+///
+/// You can generate a random EntropyPool, derive from a seed or use the key derivation
+/// function provided by the c library. You could also fill the secret manually,
+/// for instance using HMAC-SHA256 or Kekkac, but this is probably overkill.
 #[derive(Clone)]
 pub struct EntropyPool {
     pub entropy: [u8; ENTROPY_POOL_SIZE as usize],
@@ -43,6 +59,7 @@ impl EntropyPool {
         }
     }
 
+    /// Use the getrandom crate to create a randomized EntropyPool
     #[inline]
     #[cfg(feature = "random_entropy")]
     pub fn randomize() -> Self {
@@ -52,14 +69,18 @@ impl EntropyPool {
         r
     }
 
+    /// Use the entropy derivation scheme used by xxhash for deriving from seeds
     #[inline]
     pub fn with_seed(seed: u64) -> Self {
+        println!("BAR");
         let mut r = Self::new();
-        unsafe { C::XXH3_XXHRS_initCustomSecret(r.entropy.as_mut_ptr(), seed) }
-
+        unsafe { C::XXH3_XXHRS_initCustomSecret(r.entropy.as_mut_ptr() as *mut c_void, seed); }
         r
+
     }
 
+    /// Use the higher quality entropy derivation scheme from variable
+    /// length input keys
     #[inline]
     pub fn with_key(key: &[u8]) -> Self {
         let mut r = Self::new();
