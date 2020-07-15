@@ -1,0 +1,98 @@
+<!doctype html>
+<meta charset="utf-8">
+<script src="./assets/apexcharts.js"></script>
+<script src="./target/criterion/hashes/report/chart_data.js"></script>
+<div id="chart"></div>
+<style>
+  body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
+  }
+</style>
+<script>
+  const type = (v) => (v === null || v === undefined) ? v : v.constructor;
+
+  const merge = (targ, b) => {
+    if (type(targ) !== Object || type(b) !== Object)
+      return targ;
+
+    const keys = new Set([...Object.keys(targ), ...Object.keys(b)]);
+    for (const k of keys) {
+      if (k in targ)
+        merge(targ[k], b[k]);
+      else
+        targ[k] = b[k];
+    }
+    return targ;
+  };
+
+  const main = async () => {
+    const data = merge(window.chart_data, {
+      chart: {
+        toolbar: {
+          show: true
+        },
+        dataLabels: {
+          enabled: true,
+        },
+        title: {
+          align: "left"
+        },
+        legend: {
+          position: 'top',
+          horizontalAlign: 'right',
+          floating: true,
+          offsetY: -25,
+          offsetX: -5
+        },
+        height: "100%",
+        animations: {
+          enabled: false
+        },
+        zoom: {
+          enabled: true,
+          type: "x",
+        }
+      },
+      stroke: {
+        width: 3
+      },
+      yaxis: {
+        decimalsInFloat: 3,
+        forceNiceScale: true
+      }
+    });
+
+    let chart;
+
+    const zoomYAxis = (ctx, a, z) => {
+      const samples = data.series.map(({data}) => data.slice(a, z)).flat();
+      return{
+        min: samples.reduce((a, b) => Math.min(a, b)) * 0.9,
+        max: samples.reduce((a, b) => Math.max(a, b)) * 1.1,
+      };
+    };
+
+    data.chart.events = {
+      zoomed: (ctx, { xaxis }) => {
+        chart.updateOptions({
+          yaxis: merge(zoomYAxis(ctx, (xaxis.min || 1) - 1, xaxis.max ? xaxis.max - 1 : undefined), {
+            decimalsInFloat: 3,
+            forceNiceScale: true,
+            logarithmic: true
+          })
+        });
+      }
+    };
+
+    Object.assign(data.yaxis, zoomYAxis(data, 0, undefined));
+
+    chart = new ApexCharts(document.querySelector("#chart"), data);
+    chart.render();
+  }
+
+  main();
+</script>
