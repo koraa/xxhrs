@@ -1,5 +1,5 @@
-use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void};
 use crate::{entropy::EntropyPool, xxhash_bindings as C};
+use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void};
 
 // XXH3_64bits, XXH3_64bits_withSecret, XXH3_64bits_withSeed,
 // XXH3_64bits_reset, XXH3_64bits_reset_withSeed, XXH3_64bits_reset_withSecret,
@@ -40,6 +40,8 @@ impl XXH3_64<'_> {
     /// custom size entropy buffers, in which case this is the function
     /// to use.
     ///
+    /// # Safety
+    ///
     /// This function is marked unsafe just to encourage using the EntropyPool
     /// abstraction which makes it hard to produce particularly unsafe entropy
     /// pools.
@@ -68,8 +70,7 @@ impl XXH3_64<'_> {
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
         unsafe {
-            C::XXH3_64bits_withSeed(
-                bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
+            C::XXH3_64bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
         }
     }
 
@@ -94,12 +95,14 @@ impl XXH3_64<'_> {
     /// instead which copies the entropy (thus causing far fewer lifetime problems)
     /// and uses the safer EntropyPool abstraction.
     ///
+    /// # Safety
+    ///
     /// Use this function if you really want to avoid the entropy copy
     /// or if you really need to use a custom size entropy pool.
     ///
     /// The entropy pool must be at least 136 bytes.
     #[inline]
-    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_64<'a> {
+    pub unsafe fn with_entropy_buffer(entropy: &[u8]) -> XXH3_64 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_64bits_reset_withSecret(
@@ -136,10 +139,7 @@ impl XXH3_64<'_> {
     pub fn with_seed(seed: u64) -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_64bits_reset_withSeed(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                seed,
-            );
+            C::XXH3_64bits_reset_withSeed(r.as_mut_ptr() as *mut C::XXH3_state_t, seed);
             XXH3_64 {
                 state: r.assume_init(),
                 entropy_lifetime: PhantomData,
@@ -206,6 +206,8 @@ impl XXH3_128<'_> {
     /// custom size entropy buffers, in which case this is the function
     /// to use.
     ///
+    /// # Safety
+    ///
     /// This function is marked unsafe just to encourage using the EntropyPool
     /// abstraction which makes it hard to produce particularly unsafe entropy
     /// pools.
@@ -234,8 +236,9 @@ impl XXH3_128<'_> {
     /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u128 {
-        let r =
-            unsafe { C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) };
+        let r = unsafe {
+            C::XXH3_128bits_withSeed(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed)
+        };
         xxh128_to_u128(r)
     }
 
@@ -260,12 +263,14 @@ impl XXH3_128<'_> {
     /// instead which copies the entropy (thus causing far fewer lifetime problems)
     /// and uses the safer EntropyPool abstraction.
     ///
+    /// # Safety
+    ///
     /// Use this function if you really want to avoid the entropy copy
     /// or if you really need to use a custom size entropy pool.
     ///
     /// The entropy pool must be at least 136 bytes.
     #[inline]
-    pub unsafe fn with_entropy_buffer<'a>(entropy: &'a [u8]) -> XXH3_128<'a> {
+    pub unsafe fn with_entropy_buffer(entropy: &[u8]) -> XXH3_128 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
         C::XXH3_128bits_reset_withSecret(
@@ -278,7 +283,6 @@ impl XXH3_128<'_> {
             entropy_lifetime: PhantomData,
         }
     }
-
 
     /// Streaming hashing with custom entropy buffer.
     ///
@@ -303,10 +307,7 @@ impl XXH3_128<'_> {
     pub fn with_seed(seed: u64) -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_128bits_reset_withSeed(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
-                seed,
-            );
+            C::XXH3_128bits_reset_withSeed(r.as_mut_ptr() as *mut C::XXH3_state_t, seed);
             XXH3_128 {
                 state: r.assume_init(),
                 entropy_lifetime: PhantomData,
@@ -331,4 +332,3 @@ impl XXH3_128<'_> {
         xxh128_to_u128(r)
     }
 }
-

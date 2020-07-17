@@ -13,7 +13,7 @@ fn try_main() -> Result<()> {
         format!(
             "-I{dir}/vendor/xxhash/ {old}",
             dir = env::var("CARGO_MANIFEST_DIR")?,
-            old = env::var("CFLAGS").unwrap_or("".to_string())
+            old = env::var("CFLAGS").unwrap_or_else(|_| "".to_string())
         ),
     );
 
