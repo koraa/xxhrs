@@ -8,20 +8,22 @@ use std::hash::{BuildHasher, Hasher};
 use std::{cmp::min, default::Default};
 
 #[cfg(feature = "random_entropy")]
-use crate::buildhash::{RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64};
+use crate::buildhash::{
+    RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64,
+};
 
-const SEED32 :  u32 = 0xf7649871;
-const SEED64 :  u64 = 0x06cd630df7649871;
-const XXH32_HASH      :  u32 = 0xf466cd9b;
-const XXH32_SEEDED    :  u32 = 0x7ac7100f;
-const XXH64_HASH      :  u64 = 0xb047e931fe218abd;
-const XXH64_SEEDED    :  u64 = 0x12b0dbd4bd5ac33a;
-const XXH3_64_HASH    :  u64 = 0x8a24edfe37edf1ea;
-const XXH3_64_SEEDED  :  u64 = 0xbf15a1f1e41d08ae;
-const XXH3_64_KEYED   :  u64 = 0x8ed31a1c680cec2a;
-const XXH3_128_HASH   : u128 = 0x085fd9804f34051d8a24edfe37edf1ea;
-const XXH3_128_SEEDED : u128 = 0x9c43c2c76f8b3de0bf15a1f1e41d08ae;
-const XXH3_128_KEYED  : u128 = 0xdf2cabdf86a50f6e8ed31a1c680cec2a;
+const SEED32: u32 = 0xf7649871;
+const SEED64: u64 = 0x06cd630df7649871;
+const XXH32_HASH: u32 = 0xf466cd9b;
+const XXH32_SEEDED: u32 = 0x7ac7100f;
+const XXH64_HASH: u64 = 0xb047e931fe218abd;
+const XXH64_SEEDED: u64 = 0x12b0dbd4bd5ac33a;
+const XXH3_64_HASH: u64 = 0x8a24edfe37edf1ea;
+const XXH3_64_SEEDED: u64 = 0xbf15a1f1e41d08ae;
+const XXH3_64_KEYED: u64 = 0x8ed31a1c680cec2a;
+const XXH3_128_HASH: u128 = 0x085fd9804f34051d8a24edfe37edf1ea;
+const XXH3_128_SEEDED: u128 = 0x9c43c2c76f8b3de0bf15a1f1e41d08ae;
+const XXH3_128_KEYED: u128 = 0xdf2cabdf86a50f6e8ed31a1c680cec2a;
 
 const SECRET: &[u8] = include_bytes!("fixtures/secret");
 const DATA: &[u8] = include_bytes!("fixtures/data");
