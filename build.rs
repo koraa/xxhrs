@@ -6,18 +6,13 @@ use std::path::PathBuf;
 
 fn try_main() -> Result<()> {
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
-    let project_dir = {
-        let mut r = PathBuf::from(file!()).canonicalize()?;
-        r.pop();
-        r
-    };
 
     // Configure C build
     env::set_var(
         "CFLAGS",
         format!(
             "-I{dir}/vendor/xxhash/ {old}",
-            dir = project_dir.display(),
+            dir = env::var("CARGO_MANIFEST_DIR")?,
             old = env::var("CFLAGS").unwrap_or("".to_string())
         ),
     );
