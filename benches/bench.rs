@@ -1,14 +1,8 @@
-#![feature(test)]
-#![feature(or_patterns)]
-
-use ahash;
 use anyhow::{Error, Result};
 use core::iter::IntoIterator;
 use criterion::{
     black_box, criterion_group, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput,
 };
-use csv;
-use fxhash;
 use regex::Regex;
 use resiter::{and_then::*, filter::*, while_ok::*};
 use serde::ser::Serialize;
@@ -23,7 +17,6 @@ use std::{
     io::Write,
     str::FromStr,
 };
-use twox_hash;
 use walkdir::WalkDir;
 use xxhrs::{
     EntropyPool, RandomStateXXH32, RandomStateXXH3_128, RandomStateXXH3_64, RandomStateXXH64,
@@ -199,7 +192,9 @@ fn parse_unit_value(value: &str, unit: &str) -> Result<f64> {
         "s" => 1e9,
         "m" => 1e9 * 60.0,
         "h" => 1e9 * 60.0 * 60.0,
-        _ => Err(Error::msg(format!("No such unit `{}`!", unit)))?,
+        _ => {
+            return Err(Error::msg(format!("No such unit `{}`!", unit)));
+        }
     };
 
     Ok(f64::from_str(value)? * unit_factor)
@@ -274,10 +269,16 @@ where
             None => {
                 self.w.write_all(b"\n")?;
             }
-            Some(JsonStackFrame::Object(true) | JsonStackFrame::Array(true)) => {
+            Some(JsonStackFrame::Object(true)) => {
                 self.w.write_all(b",")?;
             }
-            Some(JsonStackFrame::Object(ref mut x) | JsonStackFrame::Array(ref mut x)) => {
+            Some(JsonStackFrame::Array(true)) => {
+                self.w.write_all(b",")?;
+            }
+            Some(JsonStackFrame::Object(ref mut x)) => {
+                *x = true;
+            }
+            Some(JsonStackFrame::Array(ref mut x)) => {
                 *x = true;
             }
             Some(JsonStackFrame::Key) => {
@@ -341,7 +342,7 @@ where
     W: Write,
 {
     fn drop(&mut self) {
-        while self.stack.len() > 0 {
+        while self.stack.is_empty() {
             self.end().unwrap();
         }
     }
