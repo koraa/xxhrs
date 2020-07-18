@@ -290,7 +290,7 @@ fn test_debug_print() {
         format!("RandomStateXXH3_64 {{ pool: {} }}", ENTROPY_POOL_42_DEBUG)
     );
     assert_debug!(
-        RandomStateXXH3_128 { pool: pool.clone() },
+        RandomStateXXH3_128 { pool },
         format!("RandomStateXXH3_128 {{ pool: {} }}", ENTROPY_POOL_42_DEBUG)
     );
 }
