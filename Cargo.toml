@@ -19,7 +19,7 @@ random_entropy = ["getrandom"]
 getrandom = { version = "0.1.14", optional = true }
 
 [build-dependencies]
-bindgen = "0.54.1"
+bindgen = "0.54.0"
 cc = { version = "1.0.57", features = ["parallel"] }
 anyhow = "1.0.31"
 shell-words = "1.0.0"
