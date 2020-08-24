@@ -30,7 +30,7 @@ Cargo.toml
 [dependencies]
 # Random entropy is enabled by default; it enables RandomState*
 # and EntropyPool::randomize()
-xxhrs = { version = "1.0.2", features = ["random_entriopy"] }
+xxhrs = { version = "1.0.2", features = ["random_entropy"] }
 ```
 
 ```rust
