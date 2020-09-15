@@ -19,9 +19,9 @@ random_entropy = ["getrandom"]
 getrandom = { version = "0.1.14", optional = true }
 
 [build-dependencies]
-bindgen = "0.54.0"
-cc = { version = "1.0.57", features = ["parallel"] }
-anyhow = "1.0.31"
+bindgen = "0.54.1"
+cc = { version = "1.0.59", features = ["parallel"] }
+anyhow = "1.0.32"
 shell-words = "1.0.0"
 
 [dev-dependencies]
@@ -29,14 +29,14 @@ doc-comment = "0.3.3"
 criterion = "0.3.3"
 twox-hash = "1.5.0"
 fxhash = "0.2.1"
-ahash = "0.4.0"
+ahash = "0.4.4"
 walkdir = "2.3.1"
 regex = "1.3.9"
-anyhow = "1.0.31"
+anyhow = "1.0.32"
 csv = "1.1.3"
 resiter = "0.4.0"
-serde_json = "1.0.56"
-serde = "1.0.114"
+serde_json = "1.0.57"
+serde = "1.0.115"
 
 [profile.release]
 lto = true
