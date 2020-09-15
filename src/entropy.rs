@@ -1,4 +1,4 @@
-use crate::xxhash_bindings as C;
+use crate::C;
 use std::{fmt, os::raw::c_void};
 
 #[cfg(feature = "random_entropy")]

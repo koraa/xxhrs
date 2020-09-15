@@ -3,9 +3,7 @@ use std::hash::Hasher;
 use std::mem::MaybeUninit;
 use std::os::raw::c_void;
 
-use crate::xxhash_bindings as C;
-// XXH32, XXH32_reset, XXH32_update, XXH32_digest,
-// XXH64, XXH64_reset, XXH64_update, XXH64_digest,
+use crate::C;
 
 /// xxhash 32 bit c library bindings
 ///

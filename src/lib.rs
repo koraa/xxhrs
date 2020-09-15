@@ -2,13 +2,21 @@
 #[macro_use]
 extern crate doc_comment;
 
+// C code //
+
+#[allow(non_snake_case)]
+mod C;
+mod xxhash_bindings;
+
+// Rust code //
+
 #[cfg(feature = "random_entropy")]
 mod buildhash;
-
 mod entropy;
 mod xxh3;
 mod xxhash;
-mod xxhash_bindings;
+
+// Tests //
 
 #[cfg(all(test))]
 mod tests;
@@ -16,6 +24,8 @@ mod tests;
 #[cfg(doctest)]
 #[cfg(feature = "random_entropy")]
 doctest!("../readme.md");
+
+// Exports //
 
 #[cfg(feature = "random_entropy")]
 pub use buildhash::*;

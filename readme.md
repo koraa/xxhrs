@@ -77,6 +77,10 @@ $ cargo test --all-features
 $ cargo test --no-default-features
 ```
 
+## Version History
+
+* 2.0.0 – Prefix all exports from our libxxhrs with `xxhrs_equodaeyiejoopibaeva_` to avoid name collisions when linking with another version of libxxhrs.
+
 ## License
 
 Copyright © (C) 2020, Karolin Varner. All rights reserved.

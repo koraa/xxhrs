@@ -1,13 +1,5 @@
-use crate::{entropy::EntropyPool, xxhash_bindings as C};
+use crate::{entropy::EntropyPool, C};
 use std::{default::Default, hash::Hasher, marker::PhantomData, mem::MaybeUninit, os::raw::c_void};
-
-// XXH3_64bits, XXH3_64bits_withSecret, XXH3_64bits_withSeed,
-// XXH3_64bits_reset, XXH3_64bits_reset_withSeed, XXH3_64bits_reset_withSecret,
-// XXH3_64bits_update, XXH3_64bits_digest
-//
-// XXH3_128bits, XXH3_128bits_withSecret, XXH3_128bits_withSeed
-// XXH3_128bits_reset, XXH3_128bits_reset_withSeed, XXH3_128bits_reset_withSecret,
-// XXH3_128bits_update, XXH3_128bits_digest
 
 /// xxh3 64 bit c library bindings
 ///
@@ -123,7 +115,7 @@ impl XXH3_64<'_> {
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_XXHRS_64bits_reset_withSecretCopy(
+            C::XXHRS_64bits_reset_withSecretCopy(
                 r.as_mut_ptr() as *mut C::XXH3_state_t,
                 entropy.entropy.as_ptr() as *const c_void,
             );
@@ -291,7 +283,7 @@ impl XXH3_128<'_> {
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_XXHRS_128bits_reset_withSecretCopy(
+            C::XXHRS_128bits_reset_withSecretCopy(
                 r.as_mut_ptr() as *mut C::XXH3_state_t,
                 entropy.entropy.as_ptr() as *const c_void,
             );
