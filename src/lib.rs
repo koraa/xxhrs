@@ -18,7 +18,7 @@ mod xxhash;
 
 // Tests //
 
-#[cfg(all(test))]
+#[cfg(test)]
 mod tests;
 
 #[cfg(doctest)]

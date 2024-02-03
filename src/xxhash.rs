@@ -31,7 +31,7 @@ impl XXH32 {
     /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u32, bytes: &[u8]) -> u32 {
-        unsafe { C::XXH32(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) }
+        unsafe { C::XXH32(bytes.as_ptr() as *const c_void, bytes.len(), seed) }
     }
 
     /// Streaming hashing
@@ -58,7 +58,7 @@ impl XXH32 {
             C::XXH32_update(
                 &mut self.state,
                 bytes.as_ptr() as *const c_void,
-                bytes.len() as u64,
+                bytes.len(),
             );
         }
     }
@@ -92,7 +92,7 @@ impl XXH64 {
     /// One-shot hashing with seed
     #[inline]
     pub fn hash_with_seed(seed: u64, bytes: &[u8]) -> u64 {
-        unsafe { C::XXH64(bytes.as_ptr() as *const c_void, bytes.len() as u64, seed) }
+        unsafe { C::XXH64(bytes.as_ptr() as *const c_void, bytes.len(), seed) }
     }
 
     /// Streaming hashing
@@ -121,7 +121,7 @@ impl Hasher for XXH64 {
             C::XXH64_update(
                 &mut self.state,
                 bytes.as_ptr() as *const c_void,
-                bytes.len() as u64,
+                bytes.len(),
             );
         }
     }
