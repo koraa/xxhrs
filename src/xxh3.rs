@@ -71,7 +71,15 @@ impl XXH3_64<'_> {
     pub fn new() -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_64bits_reset(r.as_mut_ptr() as *mut C::XXH3_state_t);
+            let r_ptr = r.as_mut_ptr();
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0. The field `buffer`
+            // is also not fully initialized across the FFI so we zero it out, too.
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            (*r_ptr).buffer = [0; 256];
+            C::XXH3_64bits_reset(r_ptr as *mut C::XXH3_state_t);
             XXH3_64 {
                 state: r.assume_init(),
                 entropy_lifetime: PhantomData,
@@ -97,8 +105,16 @@ impl XXH3_64<'_> {
     pub unsafe fn with_entropy_buffer(entropy: &[u8]) -> XXH3_64 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+        // SAFETY: Writes to padding fields may be optimized away on the C
+        // side since they are never accessed. To avoid UB from
+        // r.assume_uninit(), we initialize them to 0. The field `buffer`
+        // is also not fully initialized across the FFI so we zero it out, too.
+        let r_ptr = r.as_mut_ptr();
+        (*r_ptr).reserved32 = 0;
+        (*r_ptr).reserved64 = 0;
+        (*r_ptr).buffer = [0; 256];
         C::XXH3_64bits_reset_withSecret(
-            r.as_mut_ptr() as *mut C::XXH3_state_t,
+            r_ptr as *mut C::XXH3_state_t,
             entropy.as_ptr() as *const c_void,
             entropy.len() as u64,
         );
@@ -115,8 +131,16 @@ impl XXH3_64<'_> {
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            let r_ptr = r.as_mut_ptr();
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0. The field `buffer`
+            // is also not fully initialized across the FFI so we zero it out, too.
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            (*r_ptr).buffer = [0; 256];
             C::XXHRS_64bits_reset_withSecretCopy(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                r_ptr as *mut C::XXH3_state_t,
                 entropy.entropy.as_ptr() as *const c_void,
             );
             XXH3_64 {
@@ -131,7 +155,15 @@ impl XXH3_64<'_> {
     pub fn with_seed(seed: u64) -> XXH3_64<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_64bits_reset_withSeed(r.as_mut_ptr() as *mut C::XXH3_state_t, seed);
+            let r_ptr = r.as_mut_ptr();
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0. The field `buffer`
+            // is also not fully initialized across the FFI so we zero it out, too.
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            (*r_ptr).buffer = [0; 256];
+            C::XXH3_64bits_reset_withSeed(r_ptr as *mut C::XXH3_state_t, seed);
             XXH3_64 {
                 state: r.assume_init(),
                 entropy_lifetime: PhantomData,
@@ -239,7 +271,15 @@ impl XXH3_128<'_> {
     pub fn new() -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_128bits_reset(r.as_mut_ptr() as *mut C::XXH3_state_t);
+            let r_ptr = r.as_mut_ptr();
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0. The field `buffer`
+            // is also not fully initialized across the FFI so we zero it out, too.
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            (*r_ptr).buffer = [0; 256];
+            C::XXH3_128bits_reset(r_ptr as *mut C::XXH3_state_t);
             XXH3_128 {
                 state: r.assume_init(),
                 entropy_lifetime: PhantomData,
@@ -265,8 +305,16 @@ impl XXH3_128<'_> {
     pub unsafe fn with_entropy_buffer(entropy: &[u8]) -> XXH3_128 {
         assert!(entropy.len() >= (C::XXH3_SECRET_SIZE_MIN) as usize);
         let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+        let r_ptr = r.as_mut_ptr();
+        // SAFETY: Writes to padding fields may be optimized away on the C
+        // side since they are never accessed. To avoid UB from
+        // r.assume_uninit(), we initialize them to 0. The field `buffer`
+        // is also not fully initialized across the FFI so we zero it out, too.
+        (*r_ptr).reserved32 = 0;
+        (*r_ptr).reserved64 = 0;
+        (*r_ptr).buffer = [0; 256];
         C::XXH3_128bits_reset_withSecret(
-            r.as_mut_ptr() as *mut C::XXH3_state_t,
+            r_ptr as *mut C::XXH3_state_t,
             entropy.as_ptr() as *const c_void,
             entropy.len() as u64,
         );
@@ -283,8 +331,16 @@ impl XXH3_128<'_> {
     pub fn with_entropy(entropy: &EntropyPool) -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
+            let r_ptr = r.as_mut_ptr();
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0. The field `buffer`
+            // is also not fully initialized across the FFI so we zero it out, too.
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            (*r_ptr).buffer = [0; 256];
             C::XXHRS_128bits_reset_withSecretCopy(
-                r.as_mut_ptr() as *mut C::XXH3_state_t,
+                r_ptr as *mut C::XXH3_state_t,
                 entropy.entropy.as_ptr() as *const c_void,
             );
             XXH3_128 {
@@ -299,7 +355,15 @@ impl XXH3_128<'_> {
     pub fn with_seed(seed: u64) -> XXH3_128<'static> {
         unsafe {
             let mut r = MaybeUninit::<C::XXH3_state_t>::uninit();
-            C::XXH3_128bits_reset_withSeed(r.as_mut_ptr() as *mut C::XXH3_state_t, seed);
+            let r_ptr = r.as_mut_ptr();
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0. The field `buffer`
+            // is also not fully initialized across the FFI so we zero it out, too.
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            (*r_ptr).buffer = [0; 256];
+            C::XXH3_128bits_reset_withSeed(r_ptr as *mut C::XXH3_state_t, seed);
             XXH3_128 {
                 state: r.assume_init(),
                 entropy_lifetime: PhantomData,

@@ -45,7 +45,12 @@ impl XXH32 {
     pub fn with_seed(seed: u32) -> XXH32 {
         unsafe {
             let mut r = MaybeUninit::<C::XXH32_state_t>::uninit();
-            C::XXH32_reset(r.as_mut_ptr() as *mut C::XXH32_state_t, seed);
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0.
+            let r_ptr = r.as_mut_ptr();
+            (*r_ptr).reserved = 0;
+            C::XXH32_reset(r_ptr as *mut C::XXH32_state_t, seed);
             XXH32 {
                 state: r.assume_init(),
             }
@@ -106,7 +111,13 @@ impl XXH64 {
     pub fn with_seed(seed: u64) -> XXH64 {
         unsafe {
             let mut r = MaybeUninit::<C::XXH64_state_t>::uninit();
-            C::XXH64_reset(r.as_mut_ptr() as *mut C::XXH64_state_t, seed);
+            // SAFETY: Writes to padding fields may be optimized away on the C
+            // side since they are never accessed. To avoid UB from
+            // r.assume_uninit(), we initialize them to 0.
+            let r_ptr = r.as_mut_ptr();
+            (*r_ptr).reserved32 = 0;
+            (*r_ptr).reserved64 = 0;
+            C::XXH64_reset(r_ptr as *mut C::XXH64_state_t, seed);
             XXH64 {
                 state: r.assume_init(),
             }
