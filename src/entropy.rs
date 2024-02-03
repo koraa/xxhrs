@@ -24,7 +24,7 @@ pub const ENTROPY_POOL_SIZE: usize = C::XXH3_SECRET_DEFAULT_SIZE as usize;
 /// for instance using HMAC-SHA256 or Kekkac, but this is probably overkill.
 #[derive(Clone)]
 pub struct EntropyPool {
-    pub entropy: [u8; ENTROPY_POOL_SIZE as usize],
+    pub entropy: [u8; ENTROPY_POOL_SIZE],
 }
 
 impl PartialEq for EntropyPool {
@@ -78,7 +78,7 @@ impl EntropyPool {
             C::XXH3_generateSecret(
                 r.entropy.as_mut_ptr() as *mut c_void,
                 key.as_ptr() as *const c_void,
-                key.len() as u64,
+                key.len(),
             );
         }
         r

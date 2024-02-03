@@ -313,7 +313,10 @@ where
 
     fn end(&mut self) -> Result<&mut JsonSerializer<W>> {
         let what = self.stack.pop().unwrap();
-        assert!(matches!(what, JsonStackFrame::Array(_)|JsonStackFrame::Object(_)));
+        assert!(matches!(
+            what,
+            JsonStackFrame::Array(_) | JsonStackFrame::Object(_)
+        ));
         self.w.write_all(match what {
             JsonStackFrame::Object(_) => b"}",
             JsonStackFrame::Array(_) => b"]",

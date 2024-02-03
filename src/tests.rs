@@ -141,7 +141,7 @@ fn test_streaming() {
             test_stream!($out <- $var);
             test_stream!($($rest)*);
         }};
-    };
+    }
 
     test_stream!(
         XXH32_HASH   <- XXH32::new(),
@@ -257,7 +257,7 @@ fn test_hash_set() {
                 assert!(hs.insert(ix));
             }
         }};
-    };
+    }
 
     test_random_state!(RandomStateXXH64);
     test_random_state!(RandomStateXXH3_64);
@@ -270,7 +270,7 @@ fn test_debug_print() {
         ($in:expr, $out:expr) => {
             assert_eq!(format!("{:?}", $in), $out);
         };
-    };
+    }
 
     let pool = EntropyPool {
         entropy: [42u8; ENTROPY_POOL_SIZE],
