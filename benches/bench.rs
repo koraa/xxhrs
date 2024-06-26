@@ -46,7 +46,7 @@ fn bench_entropy_derivation(c: &mut Criterion) {
         }};
     };
 
-    b!("randomize", || EntropyPool::randomize());
+    b!("randomize", EntropyPool::randomize);
     b!("with_key", || EntropyPool::with_key(black_box(SECRET)));
 }
 
@@ -357,7 +357,7 @@ fn gen_interactive_chart(group: &str) -> Result<()> {
     let samples = WalkDir::new("target/criterion")
         .into_iter()
         .map(|p| p?.path().to_str().map(String::from).ok())
-        .filter_ok(|p| exp.is_match(&p))
+        .filter_ok(|p| exp.is_match(p))
         .and_then_ok(|p| load_samples(&p));
 
     // Collect test results

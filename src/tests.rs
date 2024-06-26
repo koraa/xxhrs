@@ -39,7 +39,7 @@ const ENTROPY_POOL_42_DEBUG: &str = include_str!("fixtures/entropy_pool_42_debug
 
 #[test]
 fn test_entropy_derivation() {
-    assert_eq!(EntropyPool::with_key(&SECRET), SECRET_ENTROPY);
+    assert_eq!(EntropyPool::with_key(SECRET), SECRET_ENTROPY);
 }
 
 #[test]
