@@ -79,6 +79,7 @@ $ cargo test --no-default-features
 
 ## Version History
 
+* 2.0.1 – [Fixed UB from MaybeUninit<T>::assume_init()](https://github.com/koraa/xxhrs/pull/10) by manually zero-initializing buffer and padding fields.
 * 2.0.0 – Prefix all exports from our libxxhrs with `xxhrs_equodaeyiejoopibaeva_` to avoid name collisions when linking with another version of libxxhrs.
 
 ## License
